@@ -1,0 +1,20 @@
+{
+  "name": "landing-ana",
+  "type": "module",
+  "private": true,
+  "workspaces": [
+    "front",
+    "back-ana"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:front\" \"npm run dev:back\"",
+    "dev:front": "cd ./front && bun run dev",
+    "dev:back": "cd ./back-ana && bun run develop",
+    "build": "npm run build:front && npm run build:back",
+    "build:front": "cd ./front && bun run build",
+    "build:back": "cd ./back-ana && bun run build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

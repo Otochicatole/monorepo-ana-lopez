@@ -1,0 +1,35 @@
+{
+  "kind": "collectionType",
+  "collectionName": "types_of_galleries",
+  "info": {
+    "singularName": "gallery-type",
+    "pluralName": "types-of-galleries",
+    "displayName": "types of galleries"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {
+    "i18n": {
+      "localized": true
+    }
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
+      "required": true,
+      "unique": true
+    },
+    "galleries": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::gallery.gallery",
+      "mappedBy": "types_of_gallery"
+    }
+  }
+}
