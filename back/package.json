@@ -1,5 +1,5 @@
 {
-  "name": "back-ana",
+  "name": "back",
   "version": "0.1.0",
   "private": true,
   "description": "A Strapi application",
@@ -15,10 +15,10 @@
     "upgrade:dry": "npx @strapi/upgrade latest --dry"
   },
   "dependencies": {
-    "@strapi/plugin-cloud": "5.37.1",
-    "@strapi/plugin-users-permissions": "5.37.1",
-    "@strapi/strapi": "5.37.1",
-    "pg": "8.8.0",
+    "@strapi/plugin-cloud": "5.41.1",
+    "@strapi/plugin-users-permissions": "5.41.1",
+    "@strapi/strapi": "5.41.1",
+    "better-sqlite3": "12.8.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "react-router-dom": "^6.0.0",
@@ -28,15 +28,14 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "typescript": "^5",
-    "vite": "^5"
+    "typescript": "^5"
   },
   "engines": {
     "node": ">=20.0.0 <=24.x.x",
     "npm": ">=6.0.0"
   },
   "strapi": {
-    "uuid": "fe4da804-3d97-4894-9441-8e1359b64876",
-    "installId": "b048baa1c74824c1774ae8bc96121dd3526da830a8b197e7a0506cbea465c289"
+    "uuid": "2aff778b-cb34-4b49-84bb-3962a3c05721",
+    "installId": "40cf2d47a3bb782ba6fa6229e1f08d16f864f1197ef65fdb38085a3beceb978a"
   }
 }

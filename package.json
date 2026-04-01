@@ -4,18 +4,18 @@
   "private": true,
   "workspaces": [
     "front",
-    "back-ana"
+    "back"
   ],
   "scripts": {
     "dev": "concurrently \"npm run dev:front\" \"npm run dev:back\"",
-    "dev:front": "cd ./front && bun run dev",
-    "dev:back": "cd ./back-ana && bun run develop",
+    "dev:front": "cd ./front && npm run dev",
+    "dev:back": "cd ./back && npm run develop",
     "build": "npm run build:front && npm run build:back",
-    "build:front": "cd ./front && bun run build",
-    "build:back": "cd ./back-ana && bun run build",
+    "build:front": "cd ./front && npm run build",
+    "build:back": "cd ./back && npm run build",
     "start": "concurrently \"npm run start:front\" \"npm run start:back\"",
-    "start:front": "cd ./front && bun run start",
-    "start:back": "cd ./back-ana && bun run start"
+    "start:front": "cd ./front && npm run start",
+    "start:back": "cd ./back && npm run start"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
