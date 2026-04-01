@@ -1,6 +1,7 @@
 'use client';
 import { httpGetGallery } from "@/core/http/http-get-gallery";
 import { httpGetTypesOfGalleries } from "@/core/http/http-get-types-of-galleries";
+import { buildImageUrl } from "@/core/http/build-image-url";
 import { GalleryResponse } from "@/core/types/http-gallery.types";
 import { TypeOfGalleryItem } from "@/core/types/http-types-of-galleries.types";
 import FadeInObserver from "@/shared/components/common/fade-in-observer";
@@ -11,7 +12,6 @@ import { useLocale } from "@/core/context/locale-context";
 import { useTranslations } from "@/core/i18n/use-translations";
 
 export default function Gallery() {
-    const url = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
     const [galleryData, setGalleryData] = useState<GalleryResponse | null>(null);
     const [categories, setCategories] = useState<TypeOfGalleryItem[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -142,11 +142,11 @@ export default function Gallery() {
                         <FadeInObserver key={item.id} delay={(index % pageSize) * 0.1}>
                             <article
                                 className="w-full h-full max-w-137.5 max-h-175 rounded-md overflow-hidden cursor-pointer transition-all duration-1000 border-2 border-transparent hover:border-pk"
-                                onClick={() => item.media && openModal(`${url}${item.media.url}`, item.media.alternativeText || item.name || "Gallery Image")}
+                                onClick={() => item.media && openModal(buildImageUrl(item.media.url), item.media.alternativeText || item.name || "Gallery Image")}
                             >
                                 {item.media && (
                                     <Image
-                                        src={`${url}${item.media.url}`}
+                                        src={buildImageUrl(item.media.url)}
                                         alt={item.media.alternativeText || item.name || "Gallery Image"}
                                         className="w-full h-full min-h-125 sm:min-h-175 object-cover object-center rounded-md"
                                         width={550}

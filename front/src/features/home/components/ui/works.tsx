@@ -1,5 +1,6 @@
 'use client';
 import { httpGetGallery } from "@/core/http/http-get-gallery";
+import { buildImageUrl } from "@/core/http/build-image-url";
 import { GalleryResponse } from "@/core/types/http-gallery.types";
 import FadeInObserver from "@/shared/components/common/fade-in-observer";
 import Image from "next/image";
@@ -9,7 +10,6 @@ import { useLocale } from "@/core/context/locale-context";
 import { useTranslations } from "@/core/i18n/use-translations";
 
 export default function Works() {
-    const url = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
     const [galleryData, setGalleryData] = useState<GalleryResponse | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const { locale } = useLocale();
@@ -50,7 +50,7 @@ export default function Works() {
                             <article className="flex w-full h-full max-w-137.5 max-h-187.5 items-center rounded-md justify-center">
                                 {item.media && (
                                     <Image
-                                        src={`${url}${item.media.url}`}
+                                        src={buildImageUrl(item.media.url)}
                                         alt={item.media.alternativeText || item.name || "Gallery Image"}
                                         width={550}
                                         height={750}

@@ -1,5 +1,6 @@
 'use client';
 import Image from "next/image";
+import { buildImageUrl } from "@/core/http/build-image-url";
 
 interface CardAboutProps {
     description: string;
@@ -8,8 +9,7 @@ interface CardAboutProps {
 
 export default function CardAbout({ description, image }: CardAboutProps) {
 
-    const url = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
-    const srcImage = url + image;
+    const srcImage = buildImageUrl(image);
 
     return (
         <>

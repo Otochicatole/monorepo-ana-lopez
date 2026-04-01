@@ -22,8 +22,9 @@ export default function FadeInObserverSides({ children, delay = 0, className = '
                         delay,
                         ease: [0.25, 0.1, 0.25, 1]
                     }}
+                    viewport={{ once: true }}
                 >
-                    {children}
+                    <>{children}</>
                 </motion.div>
             )
         case 'right':
@@ -37,8 +38,9 @@ export default function FadeInObserverSides({ children, delay = 0, className = '
                         delay,
                         ease: [0.25, 0.1, 0.25, 1]
                     }}
+                    viewport={{ once: true }}
                 >
-                    {children}
+                    <>{children}</>
                 </motion.div>
             )
         default:
@@ -52,8 +54,9 @@ export default function FadeInObserverSides({ children, delay = 0, className = '
                         delay,
                         ease: [0.25, 0.1, 0.25, 1]
                     }}
+                    viewport={{ once: true }}
                 >
-                    {children}
+                    <>{children}</>
                 </motion.div>
             )
     }

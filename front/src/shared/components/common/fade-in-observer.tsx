@@ -21,7 +21,7 @@ export default function FadeInObserver({ children, delay = 0, className = '' }: 
                 ease: [0.25, 0.1, 0.25, 1]
             }}
         >
-            {children}
+            <>{children}</>
         </motion.div>
     );
 }

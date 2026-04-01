@@ -1,7 +1,7 @@
 import { HttpError, type HttpRequestConfig } from "@/core/types/http-error.types";
 
 const BASE_URL =
-    process.env.NEXT_PUBLIC_STRAPI_API_URL || "http://localhost:1337";
+    process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
 
 type HttpClientConfig = HttpRequestConfig & {
     locale?: string;
