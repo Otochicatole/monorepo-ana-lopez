@@ -12,7 +12,10 @@
     "dev:back": "cd ./back-ana && bun run develop",
     "build": "npm run build:front && npm run build:back",
     "build:front": "cd ./front && bun run build",
-    "build:back": "cd ./back-ana && bun run build"
+    "build:back": "cd ./back-ana && bun run build",
+    "start": "concurrently \"npm run start:front\" \"npm run start:back\"",
+    "start:front": "cd ./front && bun run start",
+    "start:back": "cd ./back-ana && bun run start"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
