@@ -9,7 +9,7 @@ interface CardAboutProps {
 
 export default function CardAbout({ description, image }: CardAboutProps) {
 
-    const srcImage = buildImageUrl(image);
+    const srcImage = image ? buildImageUrl(image) : "/images/test.webp";
 
     return (
         <>
@@ -27,7 +27,7 @@ export default function CardAbout({ description, image }: CardAboutProps) {
                         <span className="text-pk tracking-[3px] sm:tracking-[4px] md:tracking-[6px] text-sm sm:text-base sm:mt-4">MAKEUP ARTIST</span>
                     </div>
                     <p className="text-base sm:text-lg md:text-[20px] leading-relaxed">
-                        {description}
+                        {description ? description : `About Ana` }
                     </p>
                 </div>
             </article>

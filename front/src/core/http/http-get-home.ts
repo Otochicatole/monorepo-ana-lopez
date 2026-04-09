@@ -1,4 +1,4 @@
-import { HomeResponse } from "../types/http-home.types";
+import { HomeResponse } from "@/core/types";
 import { httpClient } from "./http-client";
 
 export async function httpGetHome(locale?: string): Promise<HomeResponse> {

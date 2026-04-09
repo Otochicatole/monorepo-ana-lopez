@@ -14,7 +14,7 @@ export default async function HomePage() {
 
   const aboutData = {
     description: about,
-    image: imageAbout.url,
+    image: imageAbout?.url,
   };
 
   return (

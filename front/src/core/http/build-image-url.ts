@@ -14,3 +14,4 @@ export function buildImageUrl(imagePath: string | null | undefined): string {
 
   return `${STRAPI_URL}/${imagePath}`;
 }
+
