@@ -7,8 +7,10 @@ const resend = new Resend(Token);
 export async function POST(req: NextRequest) {
     const { name, lastName, phone, message } = await req.json();
 
+    console.log('[RESEND] Token present:', !!Token);
+
     try {
-        await resend.emails.send({
+        const { data, error } = await resend.emails.send({
             from: 'Portfolio Ana <onboarding@resend.dev>',
             to: 'anaartista122@gmail.com',
             subject: 'Portfolio Ana - New message from contact form',
@@ -20,9 +22,16 @@ export async function POST(req: NextRequest) {
                 Message: ${message}
             `
         });
+
+        if (error) {
+            console.error('[RESEND] API error:', error);
+            return NextResponse.json({ error: error.message }, { status: 500 });
+        }
+
+        console.log('[RESEND] Sent OK:', data);
         return NextResponse.json({ message: 'Form submitted successfully' }, { status: 200 });
     } catch (error) {
-        console.error('Error sending form:', error);
+        console.error('[RESEND] Exception:', error);
         return NextResponse.json({ error: 'Error sending form' }, { status: 500 });
     }
 }
