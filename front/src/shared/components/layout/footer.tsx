@@ -15,13 +15,13 @@ export default function Footer() {
                     <h2 className="text-2xl font-bold mb-3">{t.footer.followUs}</h2>
                     <ul>
                         <li>
-                            <Link href="https://www.tiktok.com/@ana.lopez.makeup" target="_blank" className="hover:text-pk hover:underline">TikTok</Link>
+                            <Link href={process.env.NEXT_PUBLIC_TIKTOK_URL || '/'} target="_blank" className="hover:text-pk hover:underline">TikTok</Link>
                         </li>
                         <li>
-                            <Link href="https://www.facebook.com/ana.lopez.makeup" target="_blank" className="hover:text-pk hover:underline">Facebook</Link>
+                            <Link href={process.env.NEXT_PUBLIC_WHATSAPP_URL || '/'} target="_blank" className="hover:text-pk hover:underline">WhatsApp</Link>
                         </li>
                         <li>
-                            <Link href="https://www.instagram.com/ana.lopez.makeup/" target="_blank" className="hover:text-pk hover:underline">Instagram</Link>
+                            <Link href={process.env.NEXT_PUBLIC_INSTAGRAM_URL || '/'} target="_blank" className="hover:text-pk hover:underline">Instagram</Link>
                         </li>
                     </ul>
                 </article>
@@ -42,9 +42,8 @@ export default function Footer() {
                 <article className="xl:text-end">
                     <h2 className="text-2xl font-bold mb-3" >{t.footer.contact}</h2>
                     <ul>
-                        <li>+549 3356-234-523</li>
-                        <li>example@gmail.com</li>
-                        <li>Instagram</li>
+                        <li>+965 9608 7035</li>
+                        <li>anaartista122@gmail.com</li>
                     </ul>
                 </article>
             </div>

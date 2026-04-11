@@ -1,6 +1,5 @@
 'use client';
 
-import { Music } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import React, { useState } from "react";
@@ -108,14 +107,14 @@ export default function ContactPage() {
                 </section>
                 <div className="flex flex-row items-center justify-center gap-5 mt-3">
                     <Link
-                        href={process.env.NEXT_PUBLIC_CONTACT_EMAIL ? `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(process.env.NEXT_PUBLIC_CONTACT_EMAIL)}` : '/'}
+                        href={process.env.NEXT_PUBLIC_TIKTOK_URL || '/'}
                         target="_blank"
                         rel="noopener noreferrer"
                     >
                         <Image
                             className="hover:scale-110 cursor-pointer transition-all"
-                            src="/svgs/mail.svg"
-                            alt="Email"
+                            src="/svgs/tiktok.svg"
+                            alt="TikTok"
                             width={30}
                             height={30}
                         />

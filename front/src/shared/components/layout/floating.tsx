@@ -66,15 +66,17 @@ export default function FloatingButtons() {
                 </div>
 
                 <Link
-                    href="mailto:contact@example.com"
+                    href={process.env.NEXT_PUBLIC_TIKTOK_URL || '/'}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="flex items-center justify-center w-14 h-14 hover:scale-110 transition-transform"
-                    aria-label="Send email"
+                    aria-label="TikTok"
                 >
-                    <Image src="/svgs/mail.svg" alt="Email" width={24} height={24} className="opacity-80 hover:opacity-100 transition-opacity" />
+                    <Image src="/svgs/tiktok.svg" alt="TikTok" width={24} height={24} className="opacity-80 hover:opacity-100 transition-opacity" />
                 </Link>
 
                 <Link
-                    href="https://wa.me/1234567890"
+                    href={process.env.NEXT_PUBLIC_WHATSAPP_URL || '/'}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center justify-center w-14 h-14 hover:scale-110 transition-transform"
@@ -84,7 +86,7 @@ export default function FloatingButtons() {
                 </Link>
 
                 <Link
-                    href="https://instagram.com/analopez"
+                    href={process.env.NEXT_PUBLIC_INSTAGRAM_URL || '/'}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center justify-center w-14 h-14 hover:scale-110 transition-transform"
@@ -144,11 +146,13 @@ export default function FloatingButtons() {
                                 transition={{ delay: 0.1 }}
                             >
                                 <Link
-                                    href="mailto:contact@example.com"
+                                    href={process.env.NEXT_PUBLIC_TIKTOK_URL || '/'}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     className="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-white/10 transition-colors"
-                                    aria-label="Send email"
+                                    aria-label="TikTok"
                                 >
-                                    <Image src="/svgs/mail.svg" alt="Email" width={20} height={20} className="opacity-80" />
+                                    <Image src="/svgs/tiktok.svg" alt="TikTok" width={20} height={20} className="opacity-80" />
                                 </Link>
                             </motion.div>
 
@@ -158,7 +162,7 @@ export default function FloatingButtons() {
                                 transition={{ delay: 0.15 }}
                             >
                                 <Link
-                                    href="https://wa.me/1234567890"
+                                    href={process.env.NEXT_PUBLIC_WHATSAPP_URL || '/'}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-white/10 transition-colors"
@@ -174,7 +178,7 @@ export default function FloatingButtons() {
                                 transition={{ delay: 0.2 }}
                             >
                                 <Link
-                                    href="https://instagram.com/analopez"
+                                    href={process.env.NEXT_PUBLIC_INSTAGRAM_URL || '/'}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-white/10 transition-colors"
