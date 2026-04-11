@@ -43,7 +43,7 @@ export default function Gallery() {
                 const galleryData = await httpGetGallery(1, pageSize, typeDocumentId, locale);
                 setGalleryData(galleryData);
                 setCurrentPage(1);
-                console.log("Gallery Data successfully fetched:", galleryData);
+                console.log("Gallery Data successfully fetched");
             }
             catch (error) {
                 console.error("Error fetching gallery data:", error);

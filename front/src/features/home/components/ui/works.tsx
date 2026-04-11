@@ -20,7 +20,7 @@ export default function Works() {
             try {
                 const data = await httpGetGallery(1, 6, undefined, locale);
                 setGalleryData(data);
-                console.log("Latest gallery data fetched:", data);
+                console.log("Latest gallery data fetched");
             } catch (error) {
                 console.error("Error fetching latest gallery:", error);
             } finally {
