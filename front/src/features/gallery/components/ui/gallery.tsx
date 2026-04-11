@@ -69,7 +69,7 @@ export default function Gallery() {
                 meta: newData.meta,
             });
             setCurrentPage(nextPage);
-            console.log("More gallery data loaded:", newData);
+            console.log("More gallery data loaded");
         } catch (error) {
             console.error("Error loading more gallery data:", error);
         } finally {
