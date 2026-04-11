@@ -23,7 +23,7 @@ export default function AboutPage() {
         fetchData();
     }, []);
 
-    if (!data) return null;
+    if (!data) return <main className="min-h-screen" />;
 
     return (
         <main className="min-h-screen py-40 px-6 lg:px-10">
