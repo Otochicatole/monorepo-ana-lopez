@@ -8,7 +8,7 @@ import { AboutResponse } from "@/core/types/http-about.types";
 export default function AboutPage() {
     const t = useTranslations();
     const [data, setData] = useState<AboutResponse['data'] | null>(null);
-    const baseUrl = process.env.NEXT_PUBLIC_STRAPI_API_URL || "http://localhost:1337";
+    const baseUrl = process.env.NEXT_PUBLIC_STRAPI_URL;
 
     useEffect(() => {
         const fetchData = async () => {
