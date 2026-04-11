@@ -1,6 +1,7 @@
 'use client';
 import Image from "next/image";
 import { httpGetAbout } from "@/core/http";
+import { buildImageUrl } from "@/core/http/build-image-url";
 import { useTranslations } from "@/core/i18n/use-translations";
 import { useEffect, useState } from "react";
 import { AboutResponse } from "@/core/types/http-about.types";
@@ -8,7 +9,6 @@ import { AboutResponse } from "@/core/types/http-about.types";
 export default function AboutPage() {
     const t = useTranslations();
     const [data, setData] = useState<AboutResponse['data'] | null>(null);
-    const baseUrl = process.env.NEXT_PUBLIC_STRAPI_URL;
 
     useEffect(() => {
         const fetchData = async () => {
@@ -38,7 +38,7 @@ export default function AboutPage() {
                     {data.Image1 && (
                         <div className="relative w-full aspect-square">
                             <Image
-                                src={`${baseUrl}${data.Image1.url}`}
+                                src={buildImageUrl(data.Image1.url)}
                                 alt={data.Image1.alternativeText || "About image 1"}
                                 fill
                                 className="object-cover rounded-md"
@@ -54,7 +54,7 @@ export default function AboutPage() {
                     {data.Image2 && (
                         <div className="relative w-full aspect-square">
                             <Image
-                                src={`${baseUrl}${data.Image2.url}`}
+                                src={buildImageUrl(data.Image2.url)}
                                 alt={data.Image2.alternativeText || "About image 2"}
                                 fill
                                 className="object-cover rounded-md"
@@ -70,7 +70,7 @@ export default function AboutPage() {
                     {data.Image3 && (
                         <div className="relative w-full aspect-square">
                             <Image
-                                src={`${baseUrl}${data.Image3.url}`}
+                                src={buildImageUrl(data.Image3.url)}
                                 alt={data.Image3.alternativeText || "About image 3"}
                                 fill
                                 className="object-cover rounded-md"
