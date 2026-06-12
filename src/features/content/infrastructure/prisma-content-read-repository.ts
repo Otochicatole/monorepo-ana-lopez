@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { createPaginationMeta } from "@/shared/domain/pagination";
-import { PublicLocale, toPersistenceLocale, toPublicLocale } from "@/shared/domain/locale";
+import { PublicLocale } from "@/shared/domain/locale";
 import {
   ContentReadRepository,
   PaginatedResult,
@@ -9,6 +9,7 @@ import { AboutContentEntity } from "../domain/about-content";
 import { GalleryItemEntity, GalleryTypeEntity } from "../domain/gallery";
 import { HomeContentEntity } from "../domain/home-content";
 import { MediaFileEntity } from "../domain/media";
+import { resolveLocaleCode } from "@/features/locale/infrastructure/locale-repository";
 
 type PrismaMedia = {
   id: number;
@@ -32,13 +33,15 @@ type PrismaMedia = {
   updatedAt: Date;
 };
 
-type PrismaGalleryType = {
+type GalleryTypeWithTranslations = {
   id: number;
   documentId: string;
-  locale: "en" | "es_AR";
-  name: string;
   createdAt: Date;
   updatedAt: Date;
+  translations: Array<{
+    name: string;
+    locale: { code: string };
+  }>;
 };
 
 type GalleryItemWithRelations = {
@@ -46,7 +49,7 @@ type GalleryItemWithRelations = {
   documentId: string;
   name: string | null;
   media: PrismaMedia;
-  galleryType: PrismaGalleryType | null;
+  galleryType: GalleryTypeWithTranslations | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -76,36 +79,68 @@ function mapMedia(media: PrismaMedia): MediaFileEntity {
   };
 }
 
-function mapGalleryType(type: PrismaGalleryType): GalleryTypeEntity {
+function resolveTypeName(
+  type: GalleryTypeWithTranslations,
+  localeCode: PublicLocale
+): string {
+  const match =
+    type.translations.find((t) => t.locale.code === localeCode) ??
+    type.translations[0];
+  return match?.name ?? type.documentId;
+}
+
+function mapGalleryType(
+  type: GalleryTypeWithTranslations,
+  localeCode: PublicLocale
+): GalleryTypeEntity {
   return {
     id: type.id,
     documentId: type.documentId,
-    locale: toPublicLocale(type.locale),
-    name: type.name,
+    locale: localeCode,
+    name: resolveTypeName(type, localeCode),
     createdAt: type.createdAt,
     updatedAt: type.updatedAt,
   };
 }
 
-function mapGalleryItem(item: GalleryItemWithRelations): GalleryItemEntity {
+function mapGalleryItem(
+  item: GalleryItemWithRelations,
+  localeCode: PublicLocale
+): GalleryItemEntity {
   return {
     id: item.id,
     documentId: item.documentId,
     name: item.name,
     media: mapMedia(item.media),
-    galleryType: item.galleryType ? mapGalleryType(item.galleryType) : null,
+    galleryType: item.galleryType
+      ? mapGalleryType(item.galleryType, localeCode)
+      : null,
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
   };
 }
 
+const galleryTypeInclude = {
+  translations: {
+    include: { locale: true },
+  },
+} as const;
+
+const galleryItemInclude = {
+  media: true,
+  galleryType: {
+    include: galleryTypeInclude,
+  },
+} as const;
+
 export class PrismaContentReadRepository implements ContentReadRepository {
   constructor(private readonly db: PrismaClient) {}
 
-  async findHome(locale: PublicLocale): Promise<HomeContentEntity | null> {
+  async findHome(localeCode: PublicLocale): Promise<HomeContentEntity | null> {
+    const locale = await resolveLocaleCode(localeCode);
     const record = await this.db.homeContent.findFirst({
       where: {
-        locale: toPersistenceLocale(locale),
+        localeId: locale.id,
         deletedAt: null,
       },
       include: { imageAbout: true },
@@ -115,7 +150,7 @@ export class PrismaContentReadRepository implements ContentReadRepository {
 
     return {
       id: record.id,
-      locale,
+      locale: locale.code,
       about: record.about,
       imageAbout: mapMedia(record.imageAbout),
       createdAt: record.createdAt,
@@ -123,10 +158,11 @@ export class PrismaContentReadRepository implements ContentReadRepository {
     };
   }
 
-  async findAbout(locale: PublicLocale): Promise<AboutContentEntity | null> {
+  async findAbout(localeCode: PublicLocale): Promise<AboutContentEntity | null> {
+    const locale = await resolveLocaleCode(localeCode);
     const record = await this.db.aboutContent.findFirst({
       where: {
-        locale: toPersistenceLocale(locale),
+        localeId: locale.id,
         deletedAt: null,
       },
       include: {
@@ -140,7 +176,7 @@ export class PrismaContentReadRepository implements ContentReadRepository {
 
     return {
       id: record.id,
-      locale,
+      locale: locale.code,
       text1: record.text1,
       image1: record.image1 ? mapMedia(record.image1) : null,
       text2: record.text2,
@@ -152,16 +188,22 @@ export class PrismaContentReadRepository implements ContentReadRepository {
     };
   }
 
-  async listGalleryTypes(locale?: PublicLocale): Promise<GalleryTypeEntity[]> {
+  async listGalleryTypes(localeCode?: PublicLocale): Promise<GalleryTypeEntity[]> {
+    const locale = await resolveLocaleCode(localeCode);
     const records = await this.db.galleryType.findMany({
-      where: {
-        ...(locale ? { locale: toPersistenceLocale(locale) } : {}),
-        deletedAt: null,
+      where: { deletedAt: null },
+      include: {
+        translations: {
+          where: { localeId: locale.id },
+          include: { locale: true },
+        },
       },
-      orderBy: { name: "asc" },
+      orderBy: { documentId: "asc" },
     });
 
-    return records.map(mapGalleryType);
+    return records
+      .filter((record) => record.translations.length > 0)
+      .map((record) => mapGalleryType(record, locale.code));
   }
 
   async listGalleryItems(input: {
@@ -169,28 +211,18 @@ export class PrismaContentReadRepository implements ContentReadRepository {
     galleryTypeDocumentId?: string;
     locale?: PublicLocale;
   }): Promise<PaginatedResult<GalleryItemEntity>> {
-    const galleryTypeWhere =
-      input.galleryTypeDocumentId || input.locale
-        ? {
-            ...(input.galleryTypeDocumentId
-              ? { documentId: input.galleryTypeDocumentId }
-              : {}),
-            ...(input.locale ? { locale: toPersistenceLocale(input.locale) } : {}),
-          }
-        : undefined;
-
+    const locale = await resolveLocaleCode(input.locale);
     const where = {
       deletedAt: null,
-      ...(galleryTypeWhere ? { galleryType: galleryTypeWhere } : {}),
+      ...(input.galleryTypeDocumentId
+        ? { galleryType: { documentId: input.galleryTypeDocumentId, deletedAt: null } }
+        : {}),
     };
 
     const [items, total] = await this.db.$transaction([
       this.db.galleryItem.findMany({
         where,
-        include: {
-          media: true,
-          galleryType: true,
-        },
+        include: galleryItemInclude,
         orderBy: { createdAt: "desc" },
         skip: (input.pagination.page - 1) * input.pagination.pageSize,
         take: input.pagination.pageSize,
@@ -199,7 +231,7 @@ export class PrismaContentReadRepository implements ContentReadRepository {
     ]);
 
     return {
-      items: items.map(mapGalleryItem),
+      items: items.map((item) => mapGalleryItem(item, locale.code)),
       total,
     };
   }
@@ -208,35 +240,40 @@ export class PrismaContentReadRepository implements ContentReadRepository {
     documentId: string;
     locale?: PublicLocale;
   }): Promise<(GalleryTypeEntity & { galleries: GalleryItemEntity[] }) | null> {
+    const locale = await resolveLocaleCode(input.locale);
     const record = await this.db.galleryType.findFirst({
       where: {
         documentId: input.documentId,
-        ...(input.locale ? { locale: toPersistenceLocale(input.locale) } : {}),
         deletedAt: null,
+        translations: { some: { localeId: locale.id } },
       },
       include: {
+        translations: {
+          where: { localeId: locale.id },
+          include: { locale: true },
+        },
         galleries: {
-          where: {
-            deletedAt: null,
-          },
-          include: {
-            media: true,
-            galleryType: true,
-          },
+          where: { deletedAt: null },
+          include: galleryItemInclude,
           orderBy: { createdAt: "desc" },
         },
       },
     });
 
-    if (!record) return null;
+    if (!record || record.translations.length === 0) return null;
 
     return {
-      ...mapGalleryType(record),
-      galleries: record.galleries.map(mapGalleryItem),
+      ...mapGalleryType(record, locale.code),
+      galleries: record.galleries.map((item) =>
+        mapGalleryItem(item, locale.code)
+      ),
     };
   }
 }
 
-export function paginationMetaFor(input: { page: number; pageSize: number }, total: number) {
+export function paginationMetaFor(
+  input: { page: number; pageSize: number },
+  total: number
+) {
   return createPaginationMeta(input, total);
 }

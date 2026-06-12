@@ -1,10 +1,11 @@
 import { NextRequest } from "next/server";
 import { contentUseCases } from "@/features/content/infrastructure/content-container";
-import { getOptionalLocale } from "@/features/content/presentation/public-content-schemas";
+import { getOptionalLocaleCode } from "@/features/content/presentation/public-content-schemas";
 import {
   galleryItemToStrapiDto,
   galleryTypeToStrapiDto,
 } from "@/features/content/presentation/strapi-compatible-dtos";
+import { resolveLocaleCode } from "@/features/locale/infrastructure/locale-repository";
 import { jsonResponse } from "@/shared/presentation/http/json-response";
 import { rateLimit } from "@/shared/presentation/http/rate-limit";
 
@@ -21,10 +22,11 @@ export async function GET(request: NextRequest, context: RouteContext) {
   if (limited) return limited;
 
   const { documentId } = await context.params;
-  const locale = getOptionalLocale(request.nextUrl.searchParams);
+  const code = getOptionalLocaleCode(request.nextUrl.searchParams);
+  const locale = await resolveLocaleCode(code);
   const type = await contentUseCases.getGalleryTypeWithItems.execute({
     documentId,
-    locale,
+    locale: locale.code,
   });
 
   if (!type) {

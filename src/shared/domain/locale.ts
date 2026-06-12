@@ -1,13 +1,15 @@
-export type PublicLocale = "en" | "es-AR";
-export type PersistenceLocale = "en" | "es_AR";
+export type PublicLocale = string;
 
-export const DEFAULT_LOCALE: PublicLocale = "en";
+export const FALLBACK_LOCALE_CODE = "en";
 
-export function toPersistenceLocale(locale: PublicLocale): PersistenceLocale {
-  return locale === "es-AR" ? "es_AR" : "en";
+export function isValidLocaleCode(code: string): boolean {
+  return /^[a-z]{2}(-[A-Za-z]{2})?$/.test(code);
 }
 
-export function toPublicLocale(locale: PersistenceLocale): PublicLocale {
-  return locale === "es_AR" ? "es-AR" : "en";
-}
+/** @deprecated Use locale.code from DB. Kept for static UI translations map keys. */
+export type StaticTranslationLocale = "en" | "es-AR";
 
+export function toStaticTranslationLocale(code: PublicLocale): StaticTranslationLocale {
+  if (code === "en") return "en";
+  return "es-AR";
+}

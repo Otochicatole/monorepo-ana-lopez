@@ -1,24 +1,42 @@
 import { z } from "zod";
-import { DEFAULT_LOCALE } from "@/shared/domain/locale";
+import { isValidLocaleCode } from "@/shared/domain/locale";
 
-export const LocaleQuerySchema = z
-  .enum(["en", "es-AR"])
-  .optional()
-  .default(DEFAULT_LOCALE);
+export const LocaleCodeSchema = z
+  .string()
+  .min(2)
+  .max(12)
+  .refine(isValidLocaleCode, "Invalid locale code format");
 
-export const OptionalLocaleQuerySchema = z.enum(["en", "es-AR"]).optional();
+export const LocaleIdSchema = z.string().cuid();
+
+export const UpsertLocaleSchema = z.object({
+  id: z.string().cuid().optional(),
+  code: LocaleCodeSchema,
+  name: z.string().min(1).max(100),
+  isDefault: z.coerce.boolean().optional().default(false),
+  isActive: z.coerce.boolean().optional().default(true),
+  sortOrder: z.coerce.number().int().min(0).max(999).optional().default(0),
+});
+
+export const LocaleQuerySchema = LocaleCodeSchema.optional();
+
+export const OptionalLocaleQuerySchema = LocaleCodeSchema.optional();
 
 export const PaginationQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(25),
 });
 
-export function getLocale(searchParams: URLSearchParams) {
-  return LocaleQuerySchema.parse(searchParams.get("locale") ?? undefined);
+export function getLocaleCode(searchParams: URLSearchParams) {
+  const raw = searchParams.get("locale");
+  if (!raw) return undefined;
+  return LocaleCodeSchema.parse(raw);
 }
 
-export function getOptionalLocale(searchParams: URLSearchParams) {
-  return OptionalLocaleQuerySchema.parse(searchParams.get("locale") ?? undefined);
+export function getOptionalLocaleCode(searchParams: URLSearchParams) {
+  const raw = searchParams.get("locale");
+  if (!raw) return undefined;
+  return OptionalLocaleQuerySchema.parse(raw);
 }
 
 export function getPagination(searchParams: URLSearchParams) {
@@ -34,4 +52,3 @@ export function getGalleryTypeDocumentId(searchParams: URLSearchParams) {
     undefined
   );
 }
-

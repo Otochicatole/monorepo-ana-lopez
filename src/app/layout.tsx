@@ -1,8 +1,10 @@
-import Nav from "@/shared/components/layout/nav";
 import "./globals.css";
 import { getFontVariables } from "@/config/fonts";
-import Footer from "@/shared/components/layout/footer";
-import FloatingButtons from "@/shared/components/layout/floating";
+import {
+  PublicFloatingButtons,
+  PublicFooter,
+  PublicNav,
+} from "@/shared/components/layout/public-site-chrome";
 import { LocaleProvider } from "@/core/context/locale-context";
 
 export const metadata = {
@@ -27,10 +29,10 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <LocaleProvider>
-          <Nav />
+          <PublicNav />
           {children}
-          <Footer />
-          <FloatingButtons />
+          <PublicFooter />
+          <PublicFloatingButtons />
         </LocaleProvider>
       </body>
     </html>

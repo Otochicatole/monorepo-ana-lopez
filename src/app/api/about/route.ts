@@ -1,7 +1,8 @@
 import { NextRequest } from "next/server";
 import { contentUseCases } from "@/features/content/infrastructure/content-container";
-import { getLocale } from "@/features/content/presentation/public-content-schemas";
+import { getOptionalLocaleCode } from "@/features/content/presentation/public-content-schemas";
 import { aboutToStrapiDto } from "@/features/content/presentation/strapi-compatible-dtos";
+import { resolveLocaleCode } from "@/features/locale/infrastructure/locale-repository";
 import { jsonResponse } from "@/shared/presentation/http/json-response";
 import { rateLimit } from "@/shared/presentation/http/rate-limit";
 
@@ -13,8 +14,9 @@ export async function GET(request: NextRequest) {
   });
   if (limited) return limited;
 
-  const locale = getLocale(request.nextUrl.searchParams);
-  const about = await contentUseCases.getAboutContent.execute(locale);
+  const code = getOptionalLocaleCode(request.nextUrl.searchParams);
+  const locale = await resolveLocaleCode(code);
+  const about = await contentUseCases.getAboutContent.execute(locale.code);
 
   return jsonResponse({
     data: about ? aboutToStrapiDto(about) : null,

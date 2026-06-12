@@ -2,9 +2,10 @@ import { NextRequest } from "next/server";
 import { contentUseCases } from "@/features/content/infrastructure/content-container";
 import {
   getGalleryTypeDocumentId,
-  getOptionalLocale,
+  getOptionalLocaleCode,
   getPagination,
 } from "@/features/content/presentation/public-content-schemas";
+import { resolveLocaleCode } from "@/features/locale/infrastructure/locale-repository";
 import { galleryItemToStrapiDto } from "@/features/content/presentation/strapi-compatible-dtos";
 import { createPaginationMeta } from "@/shared/domain/pagination";
 import { jsonResponse } from "@/shared/presentation/http/json-response";
@@ -19,13 +20,14 @@ export async function GET(request: NextRequest) {
   if (limited) return limited;
 
   const pagination = getPagination(request.nextUrl.searchParams);
-  const locale = getOptionalLocale(request.nextUrl.searchParams);
+  const code = getOptionalLocaleCode(request.nextUrl.searchParams);
+  const locale = await resolveLocaleCode(code);
   const galleryTypeDocumentId = getGalleryTypeDocumentId(
     request.nextUrl.searchParams
   );
   const result = await contentUseCases.listGalleryItems.execute({
     pagination,
-    locale,
+    locale: locale.code,
     galleryTypeDocumentId,
   });
 

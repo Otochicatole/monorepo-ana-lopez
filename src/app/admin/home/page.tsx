@@ -1,9 +1,12 @@
-import { Locale } from "@prisma/client";
 import { requireAdmin } from "@/features/admin/infrastructure/admin-auth";
 import { upsertHomeAction } from "@/features/admin/application/admin-actions";
 import { prisma } from "@/shared/infrastructure/prisma";
 import { Field, MediaSelect } from "../_components/form-fields";
-import { LocaleToggle, normalizeAdminLocale } from "../_components/locale-toggle";
+import { LocaleToggle, resolveAdminLocale } from "../_components/locale-toggle";
+import { PageHeader } from "@/features/admin/presentation/components/ui/page-shell";
+import { Card, CardBody } from "@/features/admin/presentation/components/ui/card";
+import { Button } from "@/features/admin/presentation/components/ui/button";
+import { Textarea } from "@/features/admin/presentation/components/ui/form-controls";
 
 export default async function AdminHomePage({
   searchParams,
@@ -12,43 +15,45 @@ export default async function AdminHomePage({
 }) {
   await requireAdmin();
   const params = await searchParams;
-  const locale = normalizeAdminLocale(params?.locale);
+  const locale = await resolveAdminLocale(params?.locale);
   const [record, media] = await Promise.all([
-    prisma.homeContent.findUnique({ where: { locale } }),
+    prisma.homeContent.findUnique({ where: { localeId: locale.id } }),
     prisma.mediaFile.findMany({ where: { deletedAt: null }, orderBy: { createdAt: "desc" } }),
   ]);
 
   return (
     <div>
-      <h1 className="oswald mb-8 text-4xl">Home Content</h1>
-      <LocaleToggle current={locale as Locale} basePath="/admin/home" />
-      <form
-        action={upsertHomeAction}
-        className="flex max-w-4xl flex-col gap-4 rounded border border-white/10 bg-white/5 p-5"
-      >
-        <h2 className="text-xl font-bold">
-          {locale === "es_AR" ? "Español" : "English"}
-        </h2>
-        <input type="hidden" name="locale" value={locale} />
-        <Field label="Texto About">
-          <textarea
-            name="about"
-            required
-            rows={8}
-            defaultValue={record?.about || ""}
-            className="rounded border border-white/10 bg-black/40 px-3 py-2"
-          />
-        </Field>
-        <Field label="Imagen About">
-          <MediaSelect
-            name="imageAboutId"
-            media={media}
-            required
-            defaultValue={record?.imageAboutId}
-          />
-        </Field>
-        <button className="rounded bg-pk px-4 py-2 font-bold">Guardar</button>
-      </form>
+      <PageHeader
+        title="Home Content"
+        description="Manage the hero about text and featured image for each locale."
+      />
+      <LocaleToggle current={locale} basePath="/admin/home" />
+      <Card>
+        <CardBody>
+          <form action={upsertHomeAction} className="flex max-w-4xl flex-col gap-5">
+            <input type="hidden" name="localeId" value={locale.id} />
+            <Field label="About text">
+              <Textarea
+                name="about"
+                required
+                rows={8}
+                defaultValue={record?.about || ""}
+              />
+            </Field>
+            <Field label="About image">
+              <MediaSelect
+                name="imageAboutId"
+                media={media}
+                required
+                defaultValue={record?.imageAboutId}
+              />
+            </Field>
+            <div>
+              <Button type="submit">Save home content</Button>
+            </div>
+          </form>
+        </CardBody>
+      </Card>
     </div>
   );
 }

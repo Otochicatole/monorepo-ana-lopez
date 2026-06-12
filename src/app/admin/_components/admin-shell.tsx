@@ -1,49 +1,37 @@
 import Link from "next/link";
 import { ReactNode } from "react";
 import { getCurrentAdmin } from "@/features/admin/infrastructure/admin-auth";
-import { logoutAction } from "@/features/admin/application/admin-actions";
-
-const navItems = [
-  ["/admin", "Dashboard"],
-  ["/admin/home", "Home"],
-  ["/admin/about", "About"],
-  ["/admin/media", "Media"],
-  ["/admin/gallery-types", "Gallery Types"],
-  ["/admin/gallery", "Gallery"],
-  ["/admin/audit-logs", "Audit Logs"],
-];
+import { AdminSidebar } from "@/features/admin/presentation/components/layout/admin-sidebar";
 
 export default async function AdminShell({ children }: { children: ReactNode }) {
   const admin = await getCurrentAdmin();
 
+  if (!admin) {
+    return <main className="min-h-screen bg-neutral-950 text-white">{children}</main>;
+  }
+
   return (
-    <main className="min-h-screen bg-neutral-950 text-white">
-      <header className="border-b border-white/10 bg-black/30">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-4 lg:flex-row lg:items-center lg:justify-between">
-          <Link href="/admin" className="oswald text-2xl tracking-[4px]">
-            CMS Ana Lopez
-          </Link>
-          {admin && (
-            <div className="flex flex-wrap items-center gap-3 text-sm">
-              {navItems.map(([href, label]) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className="rounded border border-white/10 px-3 py-2 text-white/80 hover:border-pk hover:text-pk"
-                >
-                  {label}
-                </Link>
-              ))}
-              <form action={logoutAction}>
-                <button className="rounded bg-white/10 px-3 py-2 text-white/80 hover:bg-white/20">
-                  Logout
-                </button>
-              </form>
+    <div className="min-h-screen bg-neutral-950 text-white">
+      <AdminSidebar />
+      <div className="lg:pl-72">
+        <header className="sticky top-0 z-30 border-b border-white/10 bg-neutral-950/90 backdrop-blur">
+          <div className="flex items-center justify-between px-4 py-4 pl-16 lg:px-8 lg:pl-8">
+            <div>
+              <p className="text-xs uppercase tracking-[0.16em] text-white/40">Administration</p>
+              <p className="text-sm text-white/70">
+                Signed in as <span className="font-medium text-white">{admin.username}</span>
+              </p>
             </div>
-          )}
-        </div>
-      </header>
-      <section className="mx-auto max-w-7xl px-6 py-8">{children}</section>
-    </main>
+            <Link
+              href="/"
+              className="rounded-lg border border-white/10 px-3 py-2 text-xs font-medium text-white/70 hover:border-pk/40 hover:text-white"
+            >
+              View site
+            </Link>
+          </div>
+        </header>
+        <main className="px-4 py-6 lg:px-8 lg:py-8">{children}</main>
+      </div>
+    </div>
   );
 }

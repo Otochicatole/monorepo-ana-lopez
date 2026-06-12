@@ -1,6 +1,10 @@
 import { redirect } from "next/navigation";
 import { getCurrentAdmin } from "@/features/admin/infrastructure/admin-auth";
 import { loginAction } from "@/features/admin/application/admin-actions";
+import { Card, CardBody } from "@/features/admin/presentation/components/ui/card";
+import { Button } from "@/features/admin/presentation/components/ui/button";
+import { FormField, Input } from "@/features/admin/presentation/components/ui/form-controls";
+import { Alert } from "@/features/admin/presentation/components/ui/page-shell";
 
 export default async function AdminLoginPage({
   searchParams,
@@ -12,40 +16,34 @@ export default async function AdminLoginPage({
   const params = await searchParams;
 
   return (
-    <div className="mx-auto mt-20 max-w-md rounded border border-white/10 bg-white/5 p-6">
-      <h1 className="oswald mb-6 text-3xl">Admin Login</h1>
-      {params.error && (
-        <p className="mb-4 rounded border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-200">
-          Credenciales invalidas.
-        </p>
-      )}
-      <form action={loginAction} className="flex flex-col gap-4">
-        <label className="flex flex-col gap-2 text-sm">
-          Usuario o email
-          <input
-            name="identifier"
-            required
-            className="rounded border border-white/10 bg-black/40 px-3 py-2"
-            defaultValue="admin@example.com"
-          />
-        </label>
-        <label className="flex flex-col gap-2 text-sm">
-          Password
-          <input
-            name="password"
-            type="password"
-            required
-            className="rounded border border-white/10 bg-black/40 px-3 py-2"
-          />
-        </label>
-        <button className="rounded bg-pk px-4 py-2 font-bold text-white">
-          Entrar
-        </button>
-      </form>
-      <p className="mt-4 text-xs text-white/50">
-        Si corriste el seed sin variables, el password inicial es admin123456.
-      </p>
+    <div className="flex min-h-screen items-center justify-center px-4">
+      <Card className="w-full max-w-md">
+        <CardBody className="space-y-6">
+          <div>
+            <p className="text-xs uppercase tracking-[0.16em] text-white/40">CMS Ana Lopez</p>
+            <h1 className="oswald mt-2 text-3xl text-white">Admin Login</h1>
+          </div>
+          {params.error ? (
+            <Alert tone="error">Invalid credentials. Please try again.</Alert>
+          ) : null}
+          <form action={loginAction} className="space-y-4">
+            <FormField label="Username or email">
+              <Input name="identifier" required autoComplete="username" />
+            </FormField>
+            <FormField label="Password">
+              <Input
+                name="password"
+                type="password"
+                required
+                autoComplete="current-password"
+              />
+            </FormField>
+            <Button type="submit" className="w-full">
+              Sign in
+            </Button>
+          </form>
+        </CardBody>
+      </Card>
     </div>
   );
 }
-

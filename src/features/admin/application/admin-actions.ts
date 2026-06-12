@@ -9,8 +9,8 @@ import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/shared/infrastructure/prisma";
 import { loginAdmin, logoutAdmin, requireAdmin } from "../infrastructure/admin-auth";
+import { LocaleIdSchema } from "@/features/content/presentation/public-content-schemas";
 
-const LocaleSchema = z.enum(["en", "es_AR"]);
 const optionalInt = z.preprocess((value) => {
   if (value === "" || value === null || typeof value === "undefined") return null;
   return Number(value);
@@ -68,21 +68,21 @@ export async function upsertHomeAction(formData: FormData) {
   const admin = await requireAdmin();
   const data = z
     .object({
-      locale: LocaleSchema,
+      localeId: LocaleIdSchema,
       about: z.string().min(1),
       imageAboutId: z.coerce.number().int().positive(),
     })
     .parse(Object.fromEntries(formData));
 
   const record = await prisma.homeContent.upsert({
-    where: { locale: data.locale },
+    where: { localeId: data.localeId },
     update: {
       about: data.about,
       imageAboutId: data.imageAboutId,
       deletedAt: null,
     },
     create: {
-      locale: data.locale,
+      localeId: data.localeId,
       about: data.about,
       imageAboutId: data.imageAboutId,
     },
@@ -93,7 +93,7 @@ export async function upsertHomeAction(formData: FormData) {
     action: "upsert",
     resource: "home",
     resourceId: record.id,
-    metadata: { locale: data.locale },
+    metadata: { localeId: data.localeId },
   });
 
   revalidatePath("/");
@@ -104,7 +104,7 @@ export async function upsertAboutAction(formData: FormData) {
   const admin = await requireAdmin();
   const data = z
     .object({
-      locale: LocaleSchema,
+      localeId: LocaleIdSchema,
       text1: z.string().optional(),
       image1Id: optionalInt,
       text2: z.string().optional(),
@@ -115,7 +115,7 @@ export async function upsertAboutAction(formData: FormData) {
     .parse(Object.fromEntries(formData));
 
   const record = await prisma.aboutContent.upsert({
-    where: { locale: data.locale },
+    where: { localeId: data.localeId },
     update: {
       text1: data.text1 || null,
       image1Id: data.image1Id,
@@ -126,7 +126,7 @@ export async function upsertAboutAction(formData: FormData) {
       deletedAt: null,
     },
     create: {
-      locale: data.locale,
+      localeId: data.localeId,
       text1: data.text1 || null,
       image1Id: data.image1Id,
       text2: data.text2 || null,
@@ -141,7 +141,7 @@ export async function upsertAboutAction(formData: FormData) {
     action: "upsert",
     resource: "about",
     resourceId: record.id,
-    metadata: { locale: data.locale },
+    metadata: { localeId: data.localeId },
   });
 
   revalidatePath("/about");
@@ -204,60 +204,102 @@ export async function createMediaAction(formData: FormData) {
   revalidatePath("/admin/media");
 }
 
-export async function uploadMediaFileAction(formData: FormData) {
-  const admin = await requireAdmin();
-  const file = formData.get("file");
+export type UploadMediaState = {
+  error?: string;
+  media?: {
+    id: number;
+    documentId: string;
+    name: string;
+    url: string;
+    alternativeText: string | null;
+  };
+};
 
-  if (!(file instanceof File) || file.size === 0) {
-    throw new Error("File is required");
-  }
-
-  if (!file.type.startsWith("image/")) {
-    throw new Error("Only image uploads are supported");
-  }
-
-  const maxSize = 5 * 1024 * 1024;
-  if (file.size > maxSize) {
-    throw new Error("File must be 5MB or smaller");
-  }
-
-  const id = randomUUID();
-  const originalName = safeFileName(file.name || "upload");
-  const extension = extname(originalName);
-  const fileName = `${id}-${originalName}`;
-  const uploadDir = join(process.cwd(), "public", "uploads", "cms");
-  const uploadPath = join(uploadDir, fileName);
-  const bytes = Buffer.from(await file.arrayBuffer());
-
-  await mkdir(uploadDir, { recursive: true });
-  await writeFile(uploadPath, bytes);
-
-  const record = await prisma.mediaFile.create({
-    data: {
-      documentId: `media-${id}`,
-      name: originalName,
-      alternativeText:
-        z.string().optional().parse(formData.get("alternativeText") || undefined) ||
-        null,
-      url: `/uploads/cms/${fileName}`,
-      mime: file.type,
-      ext: extension || null,
-      size: Number((file.size / 1024).toFixed(2)),
-      formats: {},
-      provider: "local",
-      providerMetadata: {},
-    },
-  });
-
-  await recordAudit({
-    actorId: admin.id,
-    action: "upload",
-    resource: "media",
-    resourceId: record.id,
-    metadata: { fileName, mime: file.type, size: file.size },
-  });
-
+function revalidateMediaPaths() {
   revalidatePath("/admin/media");
+  revalidatePath("/admin/gallery");
+  revalidatePath("/admin/home");
+  revalidatePath("/admin/about");
+}
+
+export async function uploadMediaFileAction(
+  _prevState: UploadMediaState | null,
+  formData: FormData
+): Promise<UploadMediaState> {
+  try {
+    const admin = await requireAdmin();
+    const file = formData.get("file");
+
+    if (!(file instanceof File) || file.size === 0) {
+      return { error: "File is required" };
+    }
+
+    if (!file.type.startsWith("image/")) {
+      return { error: "Only image uploads are supported" };
+    }
+
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      return { error: "File must be 5MB or smaller" };
+    }
+
+    const id = randomUUID();
+    const originalName = safeFileName(file.name || "upload");
+    const extension = extname(originalName);
+    const fileName = `${id}-${originalName}`;
+    const uploadDir = join(process.cwd(), "public", "uploads", "cms");
+    const uploadPath = join(uploadDir, fileName);
+    const bytes = Buffer.from(await file.arrayBuffer());
+
+    await mkdir(uploadDir, { recursive: true });
+    await writeFile(uploadPath, bytes);
+
+    const record = await prisma.mediaFile.create({
+      data: {
+        documentId: `media-${id}`,
+        name: originalName,
+        alternativeText:
+          z.string().optional().parse(formData.get("alternativeText") || undefined) ||
+          null,
+        url: `/uploads/cms/${fileName}`,
+        mime: file.type,
+        ext: extension || null,
+        size: Number((file.size / 1024).toFixed(2)),
+        formats: {},
+        provider: "local",
+        providerMetadata: {},
+      },
+    });
+
+    await recordAudit({
+      actorId: admin.id,
+      action: "upload",
+      resource: "media",
+      resourceId: record.id,
+      metadata: {
+        documentId: record.documentId,
+        fileName,
+        mime: file.type,
+        size: file.size,
+      },
+    });
+
+    revalidateMediaPaths();
+
+    return {
+      media: {
+        id: record.id,
+        documentId: record.documentId,
+        name: record.name,
+        url: record.url,
+        alternativeText: record.alternativeText,
+      },
+    };
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Upload failed",
+    };
+  }
 }
 
 export async function deleteMediaAction(formData: FormData) {
@@ -278,21 +320,28 @@ export async function createGalleryTypeAction(formData: FormData) {
   const data = z
     .object({
       documentId: z.string().min(1),
-      locale: LocaleSchema,
+      localeId: LocaleIdSchema,
       name: z.string().min(1),
     })
     .parse(Object.fromEntries(formData));
 
   const record = await prisma.galleryType.upsert({
     where: { documentId: data.documentId },
-    update: {
-      locale: data.locale,
-      name: data.name,
-      deletedAt: null,
+    update: { deletedAt: null },
+    create: { documentId: data.documentId },
+  });
+
+  await prisma.galleryTypeTranslation.upsert({
+    where: {
+      galleryTypeId_localeId: {
+        galleryTypeId: record.id,
+        localeId: data.localeId,
+      },
     },
+    update: { name: data.name },
     create: {
-      documentId: data.documentId,
-      locale: data.locale,
+      galleryTypeId: record.id,
+      localeId: data.localeId,
       name: data.name,
     },
   });
@@ -302,7 +351,7 @@ export async function createGalleryTypeAction(formData: FormData) {
     action: "upsert",
     resource: "gallery-type",
     resourceId: record.id,
-    metadata: { documentId: data.documentId, locale: data.locale },
+    metadata: { documentId: data.documentId, localeId: data.localeId },
   });
 
   revalidatePath("/gallery");
@@ -324,17 +373,24 @@ export async function deleteGalleryTypeAction(formData: FormData) {
 
 export async function createGalleryItemAction(formData: FormData) {
   const admin = await requireAdmin();
+  const raw = Object.fromEntries(formData);
   const data = z
     .object({
-      documentId: z.string().min(1),
+      documentId: z.preprocess(
+        (value) =>
+          typeof value === "string" && value.trim() === "" ? undefined : value,
+        z.string().min(1).optional()
+      ),
       name: z.string().optional(),
       mediaId: z.coerce.number().int().positive(),
       galleryTypeId: optionalInt,
     })
-    .parse(Object.fromEntries(formData));
+    .parse(raw);
+
+  const documentId = data.documentId ?? `gallery-${randomUUID()}`;
 
   const record = await prisma.galleryItem.upsert({
-    where: { documentId: data.documentId },
+    where: { documentId },
     update: {
       name: data.name || null,
       mediaId: data.mediaId,
@@ -342,7 +398,7 @@ export async function createGalleryItemAction(formData: FormData) {
       deletedAt: null,
     },
     create: {
-      documentId: data.documentId,
+      documentId,
       name: data.name || null,
       mediaId: data.mediaId,
       galleryTypeId: data.galleryTypeId,
@@ -354,7 +410,7 @@ export async function createGalleryItemAction(formData: FormData) {
     action: "upsert",
     resource: "gallery",
     resourceId: record.id,
-    metadata: { documentId: data.documentId },
+    metadata: { documentId },
   });
 
   revalidatePath("/gallery");

@@ -1,12 +1,11 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-
-type Locale = 'en' | 'es-AR';
+import { FALLBACK_LOCALE_CODE } from '@/shared/domain/locale';
 
 type LocaleContextType = {
-    locale: Locale;
-    setLocale: (locale: Locale) => void;
+    locale: string;
+    setLocale: (locale: string) => void;
 };
 
 const LocaleContext = createContext<LocaleContextType | undefined>(undefined);
@@ -30,25 +29,21 @@ function getCookie(name: string): string | null {
 }
 
 export function LocaleProvider({ children }: { children: ReactNode }) {
-    const [locale, setLocaleState] = useState<Locale>('en');
+    const [locale, setLocaleState] = useState<string>(FALLBACK_LOCALE_CODE);
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
-        const initializeLocale = () => {
-            const cookieLocale = getCookie(LOCALE_COOKIE_NAME) as Locale | null;
-            const stored = localStorage.getItem(LOCALE_STORAGE_KEY) as Locale | null;
-            const initialLocale = cookieLocale || stored;
-            
-            if (initialLocale && (initialLocale === 'en' || initialLocale === 'es-AR')) {
-                setLocaleState(initialLocale);
-            }
-            setMounted(true);
-        };
+        const cookieLocale = getCookie(LOCALE_COOKIE_NAME);
+        const stored = localStorage.getItem(LOCALE_STORAGE_KEY);
+        const initialLocale = cookieLocale || stored;
 
-        initializeLocale();
+        if (initialLocale) {
+            setLocaleState(initialLocale);
+        }
+        setMounted(true);
     }, []);
 
-    const setLocale = (newLocale: Locale) => {
+    const setLocale = (newLocale: string) => {
         setLocaleState(newLocale);
         localStorage.setItem(LOCALE_STORAGE_KEY, newLocale);
         setCookie(LOCALE_COOKIE_NAME, newLocale);

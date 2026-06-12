@@ -3,17 +3,18 @@ import Image from "next/image";
 import { httpGetAbout } from "@/core/http";
 import { buildImageUrl } from "@/core/http/build-image-url";
 import { useTranslations } from "@/core/i18n/use-translations";
+import { useLocale } from "@/core/context/locale-context";
 import { useEffect, useState } from "react";
 import { AboutResponse } from "@/core/types/http-about.types";
 
 export default function AboutPage() {
     const t = useTranslations();
+    const { locale } = useLocale();
     const [data, setData] = useState<AboutResponse['data'] | null>(null);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const locale = localStorage.getItem('user-locale') as 'en' | 'es-AR' || 'en';
                 const response = await httpGetAbout(locale);
                 setData(response.data);
             } catch (error) {
@@ -21,7 +22,7 @@ export default function AboutPage() {
             }
         };
         fetchData();
-    }, []);
+    }, [locale]);
 
     if (!data) return null;
 

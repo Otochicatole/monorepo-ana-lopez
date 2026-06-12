@@ -9,15 +9,60 @@ const permissions = [
   ["gallery", ["read", "create", "update", "delete"]],
   ["gallery-type", ["read", "create", "update", "delete"]],
   ["media", ["read", "upload", "delete"]],
+  ["locale", ["read", "create", "update", "delete"]],
   ["user", ["read", "create", "update", "delete"]],
   ["role", ["read", "create", "update", "delete"]],
   ["audit-log", ["read"]],
+];
+
+const LEGACY_GALLERY_TYPE_IDS = [
+  "gallery-type-editorial-en",
+  "gallery-type-editorial-es",
+  "gallery-type-events-en",
+  "gallery-type-events-es",
+  "gallery-type-beauty-en",
+  "gallery-type-beauty-es",
+];
+
+const LEGACY_GALLERY_ITEM_PREFIXES = [
+  "gallery-editorial-cover-en",
+  "gallery-editorial-cover-es",
+  "gallery-evening-glow-en",
+  "gallery-evening-glow-es",
+  "gallery-clean-beauty-en",
+  "gallery-clean-beauty-es",
+  "gallery-fashion-light-en",
+  "gallery-fashion-light-es",
+  "gallery-soft-event-en",
+  "gallery-soft-event-es",
+  "gallery-natural-skin-en",
+  "gallery-natural-skin-es",
 ];
 
 function hashPassword(password) {
   const salt = randomBytes(16).toString("hex");
   const hash = scryptSync(password, salt, 64).toString("hex");
   return `${salt}:${hash}`;
+}
+
+async function cleanupLegacyGalleryData() {
+  const now = new Date();
+
+  await prisma.galleryType.updateMany({
+    where: {
+      documentId: { in: LEGACY_GALLERY_TYPE_IDS },
+      deletedAt: null,
+    },
+    data: { deletedAt: now },
+  });
+
+  await prisma.galleryItem.updateMany({
+    where: {
+      documentId: { in: LEGACY_GALLERY_ITEM_PREFIXES },
+      deletedAt: null,
+    },
+    data: { deletedAt: now },
+  });
 }
 
 async function upsertMedia(input) {
@@ -62,20 +107,74 @@ async function upsertMedia(input) {
   });
 }
 
-async function upsertGalleryType(input) {
-  return prisma.galleryType.upsert({
-    where: { documentId: input.documentId },
+async function seedLocales() {
+  const en = await prisma.locale.upsert({
+    where: { code: "en" },
     update: {
-      locale: input.locale,
-      name: input.name,
-      deletedAt: null,
+      name: "English",
+      isDefault: true,
+      isActive: true,
+      sortOrder: 0,
     },
     create: {
-      documentId: input.documentId,
-      locale: input.locale,
-      name: input.name,
+      code: "en",
+      name: "English",
+      isDefault: true,
+      isActive: true,
+      sortOrder: 0,
     },
   });
+
+  const es = await prisma.locale.upsert({
+    where: { code: "es-AR" },
+    update: {
+      name: "Español (Argentina)",
+      isDefault: false,
+      isActive: true,
+      sortOrder: 1,
+    },
+    create: {
+      code: "es-AR",
+      name: "Español (Argentina)",
+      isDefault: false,
+      isActive: true,
+      sortOrder: 1,
+    },
+  });
+
+  await prisma.locale.updateMany({
+    where: { id: { not: en.id }, isDefault: true },
+    data: { isDefault: false },
+  });
+
+  return { en, es };
+}
+
+async function upsertGalleryType(documentId, translations) {
+  const type = await prisma.galleryType.upsert({
+    where: { documentId },
+    update: { deletedAt: null },
+    create: { documentId },
+  });
+
+  for (const [localeId, name] of translations) {
+    await prisma.galleryTypeTranslation.upsert({
+      where: {
+        galleryTypeId_localeId: {
+          galleryTypeId: type.id,
+          localeId,
+        },
+      },
+      update: { name },
+      create: {
+        galleryTypeId: type.id,
+        localeId,
+        name,
+      },
+    });
+  }
+
+  return type;
 }
 
 async function upsertGalleryItem(input) {
@@ -139,9 +238,9 @@ async function seedMedia() {
   return { ana, header, test };
 }
 
-async function seedContent(media) {
+async function seedContent(media, locales) {
   await prisma.homeContent.upsert({
-    where: { locale: "en" },
+    where: { localeId: locales.en.id },
     update: {
       about:
         "Ana Lopez is a makeup artist focused on editorial, fashion and event looks. Her work highlights natural beauty with precise technique, soft textures and a refined use of light.",
@@ -149,7 +248,7 @@ async function seedContent(media) {
       deletedAt: null,
     },
     create: {
-      locale: "en",
+      localeId: locales.en.id,
       about:
         "Ana Lopez is a makeup artist focused on editorial, fashion and event looks. Her work highlights natural beauty with precise technique, soft textures and a refined use of light.",
       imageAboutId: media.ana.id,
@@ -157,23 +256,23 @@ async function seedContent(media) {
   });
 
   await prisma.homeContent.upsert({
-    where: { locale: "es_AR" },
+    where: { localeId: locales.es.id },
     update: {
       about:
-        "Ana Lopez es una maquilladora enfocada en producciones editoriales, moda y eventos. Su trabajo realza la belleza natural con tecnica precisa, texturas suaves y un uso cuidado de la luz.",
+        "Ana Lopez es una maquilladora enfocada en producciones editoriales, moda y eventos. Su trabajo realza la belleza natural con técnica precisa, texturas suaves y un uso cuidado de la luz.",
       imageAboutId: media.ana.id,
       deletedAt: null,
     },
     create: {
-      locale: "es_AR",
+      localeId: locales.es.id,
       about:
-        "Ana Lopez es una maquilladora enfocada en producciones editoriales, moda y eventos. Su trabajo realza la belleza natural con tecnica precisa, texturas suaves y un uso cuidado de la luz.",
+        "Ana Lopez es una maquilladora enfocada en producciones editoriales, moda y eventos. Su trabajo realza la belleza natural con técnica precisa, texturas suaves y un uso cuidado de la luz.",
       imageAboutId: media.ana.id,
     },
   });
 
   await prisma.aboutContent.upsert({
-    where: { locale: "en" },
+    where: { localeId: locales.en.id },
     update: {
       text1:
         "Ana's approach starts with listening: skin, style, occasion and personality define every look.",
@@ -187,7 +286,7 @@ async function seedContent(media) {
       deletedAt: null,
     },
     create: {
-      locale: "en",
+      localeId: locales.en.id,
       text1:
         "Ana's approach starts with listening: skin, style, occasion and personality define every look.",
       image1Id: media.ana.id,
@@ -201,13 +300,13 @@ async function seedContent(media) {
   });
 
   await prisma.aboutContent.upsert({
-    where: { locale: "es_AR" },
+    where: { localeId: locales.es.id },
     update: {
       text1:
-        "El enfoque de Ana empieza por escuchar: piel, estilo, ocasion y personalidad definen cada look.",
+        "El enfoque de Ana empieza por escuchar: piel, estilo, ocasión y personalidad definen cada look.",
       image1Id: media.ana.id,
       text2:
-        "Su portfolio combina belleza limpia, contraste editorial y terminaciones luminosas para camara y vida real.",
+        "Su portfolio combina belleza limpia, contraste editorial y terminaciones luminosas para cámara y vida real.",
       image2Id: media.header.id,
       text3:
         "Desde eventos sociales hasta producciones creativas, cada servicio se planifica con cuidado, higiene y detalle.",
@@ -215,12 +314,12 @@ async function seedContent(media) {
       deletedAt: null,
     },
     create: {
-      locale: "es_AR",
+      localeId: locales.es.id,
       text1:
-        "El enfoque de Ana empieza por escuchar: piel, estilo, ocasion y personalidad definen cada look.",
+        "El enfoque de Ana empieza por escuchar: piel, estilo, ocasión y personalidad definen cada look.",
       image1Id: media.ana.id,
       text2:
-        "Su portfolio combina belleza limpia, contraste editorial y terminaciones luminosas para camara y vida real.",
+        "Su portfolio combina belleza limpia, contraste editorial y terminaciones luminosas para cámara y vida real.",
       image2Id: media.header.id,
       text3:
         "Desde eventos sociales hasta producciones creativas, cada servicio se planifica con cuidado, higiene y detalle.",
@@ -229,51 +328,29 @@ async function seedContent(media) {
   });
 }
 
-async function seedGallery(media) {
-  const editorialEn = await upsertGalleryType({
-    documentId: "gallery-type-editorial-en",
-    locale: "en",
-    name: "Editorial",
-  });
-  const eventsEn = await upsertGalleryType({
-    documentId: "gallery-type-events-en",
-    locale: "en",
-    name: "Events",
-  });
-  const beautyEn = await upsertGalleryType({
-    documentId: "gallery-type-beauty-en",
-    locale: "en",
-    name: "Beauty",
-  });
-  const editorialEs = await upsertGalleryType({
-    documentId: "gallery-type-editorial-es",
-    locale: "es_AR",
-    name: "Editorial",
-  });
-  const eventsEs = await upsertGalleryType({
-    documentId: "gallery-type-events-es",
-    locale: "es_AR",
-    name: "Eventos",
-  });
-  const beautyEs = await upsertGalleryType({
-    documentId: "gallery-type-beauty-es",
-    locale: "es_AR",
-    name: "Belleza",
-  });
+async function seedGallery(media, locales) {
+  await cleanupLegacyGalleryData();
+
+  const editorial = await upsertGalleryType("gallery-type-editorial", [
+    [locales.en.id, "Editorial"],
+    [locales.es.id, "Editorial"],
+  ]);
+  const events = await upsertGalleryType("gallery-type-events", [
+    [locales.en.id, "Events"],
+    [locales.es.id, "Eventos"],
+  ]);
+  const beauty = await upsertGalleryType("gallery-type-beauty", [
+    [locales.en.id, "Beauty"],
+    [locales.es.id, "Belleza"],
+  ]);
 
   const items = [
-    ["gallery-editorial-cover-en", "Editorial Cover", media.header.id, editorialEn.id],
-    ["gallery-evening-glow-en", "Evening Glow", media.test.id, eventsEn.id],
-    ["gallery-clean-beauty-en", "Clean Beauty", media.ana.id, beautyEn.id],
-    ["gallery-fashion-light-en", "Fashion Light", media.header.id, editorialEn.id],
-    ["gallery-soft-event-en", "Soft Event Look", media.test.id, eventsEn.id],
-    ["gallery-natural-skin-en", "Natural Skin", media.ana.id, beautyEn.id],
-    ["gallery-editorial-cover-es", "Tapa Editorial", media.header.id, editorialEs.id],
-    ["gallery-evening-glow-es", "Brillo de Noche", media.test.id, eventsEs.id],
-    ["gallery-clean-beauty-es", "Belleza Limpia", media.ana.id, beautyEs.id],
-    ["gallery-fashion-light-es", "Luz de Moda", media.header.id, editorialEs.id],
-    ["gallery-soft-event-es", "Look Suave de Evento", media.test.id, eventsEs.id],
-    ["gallery-natural-skin-es", "Piel Natural", media.ana.id, beautyEs.id],
+    ["gallery-editorial-cover", "Editorial Cover", media.header.id, editorial.id],
+    ["gallery-evening-glow", "Evening Glow", media.test.id, events.id],
+    ["gallery-clean-beauty", "Clean Beauty", media.ana.id, beauty.id],
+    ["gallery-fashion-light", "Fashion Light", media.header.id, editorial.id],
+    ["gallery-soft-event", "Soft Event Look", media.test.id, events.id],
+    ["gallery-natural-skin", "Natural Skin", media.ana.id, beauty.id],
   ];
 
   for (const [documentId, name, mediaId, galleryTypeId] of items) {
@@ -339,26 +416,43 @@ async function seedSecurity() {
 }
 
 async function main() {
+  const locales = await seedLocales();
   const media = await seedMedia();
-  await seedContent(media);
-  await seedGallery(media);
+  await seedContent(media, locales);
+  await seedGallery(media, locales);
   await seedSecurity();
 
-  const [homeCount, aboutCount, galleryTypeCount, galleryCount, mediaCount] =
-    await Promise.all([
-      prisma.homeContent.count(),
-      prisma.aboutContent.count(),
-      prisma.galleryType.count(),
-      prisma.galleryItem.count(),
-      prisma.mediaFile.count(),
-    ]);
+  const [
+    localeCount,
+    homeCount,
+    aboutCount,
+    galleryTypeCount,
+    galleryTranslationCount,
+    galleryCount,
+    mediaCount,
+    adminCount,
+  ] = await Promise.all([
+    prisma.locale.count({ where: { isActive: true } }),
+    prisma.homeContent.count({ where: { deletedAt: null } }),
+    prisma.aboutContent.count({ where: { deletedAt: null } }),
+    prisma.galleryType.count({ where: { deletedAt: null } }),
+    prisma.galleryTypeTranslation.count(),
+    prisma.galleryItem.count({ where: { deletedAt: null } }),
+    prisma.mediaFile.count({ where: { deletedAt: null } }),
+    prisma.adminUser.count({ where: { deletedAt: null } }),
+  ]);
 
   console.log("Seed completed", {
+    locales: localeCount,
     home: homeCount,
     about: aboutCount,
     galleryTypes: galleryTypeCount,
+    galleryTypeTranslations: galleryTranslationCount,
     galleryItems: galleryCount,
     media: mediaCount,
+    admins: adminCount,
+    defaultLocale: "en",
+    adminLogin: process.env.ADMIN_SEED_EMAIL || "admin@example.com",
   });
 }
 

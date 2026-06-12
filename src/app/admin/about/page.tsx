@@ -1,9 +1,12 @@
-import { Locale } from "@prisma/client";
 import { requireAdmin } from "@/features/admin/infrastructure/admin-auth";
 import { upsertAboutAction } from "@/features/admin/application/admin-actions";
 import { prisma } from "@/shared/infrastructure/prisma";
 import { Field, MediaSelect } from "../_components/form-fields";
-import { LocaleToggle, normalizeAdminLocale } from "../_components/locale-toggle";
+import { LocaleToggle, resolveAdminLocale } from "../_components/locale-toggle";
+import { PageHeader } from "@/features/admin/presentation/components/ui/page-shell";
+import { Card, CardBody } from "@/features/admin/presentation/components/ui/card";
+import { Button } from "@/features/admin/presentation/components/ui/button";
+import { Textarea } from "@/features/admin/presentation/components/ui/form-controls";
 
 export default async function AdminAboutPage({
   searchParams,
@@ -12,42 +15,41 @@ export default async function AdminAboutPage({
 }) {
   await requireAdmin();
   const params = await searchParams;
-  const locale = normalizeAdminLocale(params?.locale);
+  const locale = await resolveAdminLocale(params?.locale);
   const [record, media] = await Promise.all([
-    prisma.aboutContent.findUnique({ where: { locale } }),
+    prisma.aboutContent.findUnique({ where: { localeId: locale.id } }),
     prisma.mediaFile.findMany({ where: { deletedAt: null }, orderBy: { createdAt: "desc" } }),
   ]);
 
   return (
     <div>
-      <h1 className="oswald mb-8 text-4xl">About Content</h1>
-      <LocaleToggle current={locale as Locale} basePath="/admin/about" />
-      <form
-        action={upsertAboutAction}
-        className="flex max-w-4xl flex-col gap-4 rounded border border-white/10 bg-white/5 p-5"
-      >
-        <h2 className="text-xl font-bold">
-          {locale === "es_AR" ? "Español" : "English"}
-        </h2>
-        <input type="hidden" name="locale" value={locale} />
+      <PageHeader
+        title="About Content"
+        description="Edit the three text and image blocks shown on the about page."
+      />
+      <LocaleToggle current={locale} basePath="/admin/about" />
+      <form action={upsertAboutAction} className="space-y-5">
+        <input type="hidden" name="localeId" value={locale.id} />
         {[1, 2, 3].map((index) => (
-          <div key={index} className="rounded border border-white/10 p-4">
-            <Field label={`Texto ${index}`}>
-              <textarea
-                name={`text${index}`}
-                rows={5}
-                defaultValue={
-                  index === 1
-                    ? record?.text1 || ""
-                    : index === 2
-                      ? record?.text2 || ""
-                      : record?.text3 || ""
-                }
-                className="rounded border border-white/10 bg-black/40 px-3 py-2"
-              />
-            </Field>
-            <div className="mt-4">
-              <Field label={`Imagen ${index}`}>
+          <Card key={index}>
+            <CardBody className="space-y-4">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-white/50">
+                Block {index}
+              </h2>
+              <Field label={`Text ${index}`}>
+                <Textarea
+                  name={`text${index}`}
+                  rows={5}
+                  defaultValue={
+                    index === 1
+                      ? record?.text1 || ""
+                      : index === 2
+                        ? record?.text2 || ""
+                        : record?.text3 || ""
+                  }
+                />
+              </Field>
+              <Field label={`Image ${index}`}>
                 <MediaSelect
                   name={`image${index}Id`}
                   media={media}
@@ -60,10 +62,10 @@ export default async function AdminAboutPage({
                   }
                 />
               </Field>
-            </div>
-          </div>
+            </CardBody>
+          </Card>
         ))}
-        <button className="rounded bg-pk px-4 py-2 font-bold">Guardar</button>
+        <Button type="submit">Save about content</Button>
       </form>
     </div>
   );

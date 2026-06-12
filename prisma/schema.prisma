@@ -7,75 +7,99 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Locale {
-  en
-  es_AR
-}
-
 enum ContactEmailStatus {
   PENDING
   SENT
   FAILED
 }
 
+model Locale {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  isDefault Boolean  @default(false)
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  homeContents            HomeContent[]
+  aboutContents           AboutContent[]
+  galleryTypeTranslations GalleryTypeTranslation[]
+
+  @@index([isActive, sortOrder])
+}
+
 model HomeContent {
-  id           Int           @id @default(autoincrement())
-  locale       Locale
+  id           Int       @id @default(autoincrement())
+  localeId     String
+  locale       Locale    @relation(fields: [localeId], references: [id])
   about        String
   imageAboutId Int
-  imageAbout   MediaFile     @relation("HomeImageAbout", fields: [imageAboutId], references: [id])
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  imageAbout   MediaFile @relation("HomeImageAbout", fields: [imageAboutId], references: [id])
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
   deletedAt    DateTime?
 
-  @@unique([locale])
-  @@index([locale])
+  @@unique([localeId])
+  @@index([localeId])
 }
 
 model AboutContent {
-  id          Int           @id @default(autoincrement())
-  locale      Locale
-  text1       String?
-  image1Id    Int?
-  image1      MediaFile?    @relation("AboutImage1", fields: [image1Id], references: [id])
-  text2       String?
-  image2Id    Int?
-  image2      MediaFile?    @relation("AboutImage2", fields: [image2Id], references: [id])
-  text3       String?
-  image3Id    Int?
-  image3      MediaFile?    @relation("AboutImage3", fields: [image3Id], references: [id])
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  deletedAt   DateTime?
+  id        Int        @id @default(autoincrement())
+  localeId  String
+  locale    Locale     @relation(fields: [localeId], references: [id])
+  text1     String?
+  image1Id  Int?
+  image1    MediaFile? @relation("AboutImage1", fields: [image1Id], references: [id])
+  text2     String?
+  image2Id  Int?
+  image2    MediaFile? @relation("AboutImage2", fields: [image2Id], references: [id])
+  text3     String?
+  image3Id  Int?
+  image3    MediaFile? @relation("AboutImage3", fields: [image3Id], references: [id])
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  deletedAt DateTime?
 
-  @@unique([locale])
-  @@index([locale])
+  @@unique([localeId])
+  @@index([localeId])
 }
 
 model GalleryType {
-  id          Int           @id @default(autoincrement())
-  documentId  String        @unique @default(cuid())
-  locale      Locale
-  name        String
-  galleries   GalleryItem[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  deletedAt   DateTime?
+  id           Int                      @id @default(autoincrement())
+  documentId   String                   @unique @default(cuid())
+  galleries    GalleryItem[]
+  translations GalleryTypeTranslation[]
+  createdAt    DateTime                 @default(now())
+  updatedAt    DateTime                 @updatedAt
+  deletedAt    DateTime?
+}
 
-  @@unique([locale, name])
-  @@index([locale])
+model GalleryTypeTranslation {
+  id            Int         @id @default(autoincrement())
+  galleryTypeId Int
+  galleryType   GalleryType @relation(fields: [galleryTypeId], references: [id], onDelete: Cascade)
+  localeId      String
+  locale        Locale      @relation(fields: [localeId], references: [id])
+  name          String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([galleryTypeId, localeId])
+  @@index([localeId])
 }
 
 model GalleryItem {
-  id            Int           @id @default(autoincrement())
-  documentId    String        @unique @default(cuid())
+  id            Int          @id @default(autoincrement())
+  documentId    String       @unique @default(cuid())
   name          String?
   mediaId       Int
-  media         MediaFile     @relation("GalleryMedia", fields: [mediaId], references: [id])
+  media         MediaFile    @relation("GalleryMedia", fields: [mediaId], references: [id])
   galleryTypeId Int?
-  galleryType   GalleryType?  @relation(fields: [galleryTypeId], references: [id])
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  galleryType   GalleryType? @relation(fields: [galleryTypeId], references: [id])
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
   deletedAt     DateTime?
 
   @@index([createdAt])
@@ -83,26 +107,26 @@ model GalleryItem {
 }
 
 model MediaFile {
-  id              Int       @id @default(autoincrement())
-  documentId      String    @unique @default(cuid())
-  name            String
-  alternativeText String?
-  caption         String?
-  width           Int?
-  height          Int?
-  formats         Json?
-  hash            String?
-  ext             String?
-  mime            String
-  size            Decimal
-  url             String
-  previewUrl      String?
-  provider        String    @default("local")
+  id               Int       @id @default(autoincrement())
+  documentId       String    @unique @default(cuid())
+  name             String
+  alternativeText  String?
+  caption          String?
+  width            Int?
+  height           Int?
+  formats          Json?
+  hash             String?
+  ext              String?
+  mime             String
+  size             Decimal
+  url              String
+  previewUrl       String?
+  provider         String    @default("local")
   providerMetadata Json?
-  focalPoint      Json?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  deletedAt       DateTime?
+  focalPoint       Json?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
 
   homeImageAbout HomeContent[] @relation("HomeImageAbout")
   galleryMedia   GalleryItem[] @relation("GalleryMedia")
