@@ -81,11 +81,6 @@ function GalleryItemRow({
           </p>
           <p className="truncate font-mono text-[11px] text-white/40">{item.documentId}</p>
           <div className="mt-0.5 flex flex-wrap items-center gap-2">
-            {item.galleryTypeDocumentId && (
-              <span className="rounded-md bg-pk/10 px-1.5 py-0.5 text-[10px] font-medium text-pk">
-                {item.galleryTypeDocumentId}
-              </span>
-            )}
             <span className="text-[11px] text-white/30">
               {new Date(item.createdAt).toLocaleDateString(undefined, {
                 day: "2-digit",
