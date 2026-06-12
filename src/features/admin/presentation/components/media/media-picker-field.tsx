@@ -64,7 +64,7 @@ export function MediaPickerField({
     <FormField label={label}>
       <input type="hidden" name={name} value={selectedId ?? ""} required={required} />
 
-      <div className="flex flex-col gap-4 rounded-lg border border-white/10 bg-neutral-900/40 p-4 sm:flex-row sm:items-center">
+      <div className="flex min-w-0 flex-col gap-4 overflow-hidden rounded-lg border border-white/10 bg-neutral-900/40 p-4 sm:flex-row sm:items-center">
         <div className="relative h-28 w-24 shrink-0 overflow-hidden rounded-lg bg-black/40">
           {selected?.url.startsWith("/") ? (
             <Image

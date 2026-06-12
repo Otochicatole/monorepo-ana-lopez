@@ -54,9 +54,9 @@ function GalleryItemRow({
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <li className="flex flex-col divide-y divide-white/[0.06]">
+    <li className="flex min-w-0 flex-col divide-y divide-white/[0.06]">
       {/* Summary row */}
-      <div className="flex items-center gap-4 px-5 py-3">
+      <div className="flex min-w-0 items-center gap-4 px-5 py-3">
         {/* Thumbnail */}
         <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-black/40">
           {item.media.url.startsWith("/") ? (
@@ -115,8 +115,8 @@ function GalleryItemRow({
 
       {/* Expanded edit form */}
       {expanded && (
-        <div className="bg-white/[0.02] px-5 py-4">
-          <form action={createGalleryItemAction} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="min-w-0 overflow-hidden bg-white/[0.02] px-5 py-4">
+          <form action={createGalleryItemAction} className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <input type="hidden" name="documentId" value={item.documentId} />
             <Field label="Internal name">
               <Input name="name" defaultValue={item.name || ""} placeholder="Optional label" />
@@ -133,7 +133,7 @@ function GalleryItemRow({
                 ]}
               />
             </Field>
-            <div className="sm:col-span-2 lg:col-span-1">
+            <div className="min-w-0 sm:col-span-2 lg:col-span-1">
               <MediaPickerField
                 name="mediaId"
                 media={mediaItems}
