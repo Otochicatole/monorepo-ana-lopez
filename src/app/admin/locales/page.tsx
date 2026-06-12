@@ -1,33 +1,41 @@
 import Link from "next/link";
+import { Globe, Star, Zap } from "lucide-react";
 import { requireAdmin } from "@/features/admin/infrastructure/admin-auth";
 import { listLocales } from "@/features/locale/infrastructure/locale-repository";
 import {
   setDefaultLocaleAction,
   toggleLocaleActiveAction,
   upsertLocaleAction,
+  deleteLocaleAction,
 } from "@/features/admin/application/locale-actions";
-import { PageHeader, Alert, Badge, EmptyState } from "@/features/admin/presentation/components/ui/page-shell";
+import {
+  PageHeader,
+  Alert,
+  Badge,
+  EmptyState,
+} from "@/features/admin/presentation/components/ui/page-shell";
 import { Card, CardBody, CardHeader } from "@/features/admin/presentation/components/ui/card";
 import { Button } from "@/features/admin/presentation/components/ui/button";
+import { ConfirmDeleteButton } from "@/features/admin/presentation/components/ui/confirm-delete-button";
 import { FormField, Input } from "@/features/admin/presentation/components/ui/form-controls";
 
 export default async function AdminLocalesPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ saved?: string; edit?: string }>;
+  searchParams?: Promise<{ saved?: string; edit?: string; error?: string }>;
 }) {
   await requireAdmin();
   const params = await searchParams;
   const locales = await listLocales();
   const editing = params?.edit
-    ? locales.find((locale) => locale.id === params.edit)
+    ? locales.find((l) => l.id === params.edit)
     : undefined;
 
   return (
     <div>
       <PageHeader
         title="Locales"
-        description="Manage available languages for translatable content. Active locales appear in content editors and the public site."
+        description="Languages available for translatable content."
         actions={
           editing ? (
             <Link href="/admin/locales">
@@ -37,140 +45,168 @@ export default async function AdminLocalesPage({
         }
       />
 
-      {params?.saved ? (
-        <Alert tone="success" >
-          Locale saved successfully.
-        </Alert>
-      ) : null}
+      {params?.saved && <Alert tone="success">Locale saved successfully.</Alert>}
+      {params?.error && (
+        <Alert tone="error">{decodeURIComponent(params.error)}</Alert>
+      )}
 
+      {/* Create / Edit form */}
       <Card className="mb-8 mt-6">
         <CardHeader
-          title={editing ? "Edit locale" : "Create locale"}
-          description='Use BCP 47-style codes such as "en" or "es-AR".'
+          title={editing ? `Edit "${editing.name}"` : "Add locale"}
+          description={
+            editing
+              ? "Change name, status or default. Code cannot be modified."
+              : 'BCP 47 codes: "en", "es", "es-AR", "pt-BR".'
+          }
         />
         <CardBody>
-          <form action={upsertLocaleAction} className="grid gap-4 md:grid-cols-2">
-            {editing ? <input type="hidden" name="id" value={editing.id} /> : null}
-            <FormField label="Code">
-              <Input
-                name="code"
-                required
-                defaultValue={editing?.code}
-                placeholder="es-AR"
-                readOnly={Boolean(editing)}
-              />
+          <form action={upsertLocaleAction} className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
+            {editing && <input type="hidden" name="id" value={editing.id} />}
+
+            <FormField label="Language code" hint={editing ? "Cannot change after creation" : 'e.g. "es-AR"'}>
+              {editing ? (
+                <>
+                  <input type="hidden" name="code" value={editing.code} />
+                  <Input
+                    defaultValue={editing.code}
+                    readOnly
+                    className="w-32 cursor-not-allowed font-mono opacity-60"
+                  />
+                </>
+              ) : (
+                <Input
+                  name="code"
+                  required
+                  placeholder="es-AR"
+                  autoComplete="off"
+                  spellCheck={false}
+                  className="w-32 font-mono"
+                />
+              )}
             </FormField>
+
             <FormField label="Display name">
               <Input
                 name="name"
                 required
                 defaultValue={editing?.name}
                 placeholder="Español (Argentina)"
+                className="sm:w-64"
               />
             </FormField>
-            <FormField label="Sort order">
-              <Input
-                name="sortOrder"
-                type="number"
-                min={0}
-                defaultValue={editing?.sortOrder ?? 0}
-              />
-            </FormField>
-            <div className="flex flex-col gap-3 md:col-span-2 md:flex-row md:items-center">
-              <label className="flex items-center gap-2 text-sm text-white/70">
+
+            <div className="flex flex-wrap gap-4 sm:items-end">
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-white/70">
                 <input
                   type="checkbox"
                   name="isActive"
                   defaultChecked={editing?.isActive ?? true}
-                  className="accent-pk"
+                  className="h-4 w-4 accent-pk"
                 />
                 Active
               </label>
-              <label className="flex items-center gap-2 text-sm text-white/70">
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-white/70">
                 <input
                   type="checkbox"
                   name="isDefault"
                   defaultChecked={editing?.isDefault ?? false}
-                  className="accent-pk"
+                  className="h-4 w-4 accent-pk"
                 />
-                Default locale
+                Default
               </label>
-            </div>
-            <div className="md:col-span-2">
-              <Button type="submit">{editing ? "Update locale" : "Create locale"}</Button>
+              <Button type="submit">
+                {editing ? "Update" : "Create locale"}
+              </Button>
             </div>
           </form>
         </CardBody>
       </Card>
 
+      {/* Locale list */}
       {locales.length === 0 ? (
         <EmptyState
           title="No locales configured"
-          description="Create at least one active locale before editing translatable content."
+          description="Create at least one active locale before editing content."
         />
       ) : (
         <Card>
-          <CardHeader title="All locales" />
-          <CardBody className="overflow-x-auto p-0">
-            <table className="w-full min-w-[760px] text-left text-sm">
-              <thead className="border-b border-white/10 bg-white/[0.03] text-white/50">
-                <tr>
-                  <th className="px-5 py-3 font-medium">Code</th>
-                  <th className="px-5 py-3 font-medium">Name</th>
-                  <th className="px-5 py-3 font-medium">Status</th>
-                  <th className="px-5 py-3 font-medium">Order</th>
-                  <th className="px-5 py-3 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {locales.map((locale) => (
-                  <tr key={locale.id} className="border-t border-white/10">
-                    <td className="px-5 py-4 font-mono text-xs">{locale.code}</td>
-                    <td className="px-5 py-4">{locale.name}</td>
-                    <td className="px-5 py-4">
-                      <div className="flex flex-wrap gap-2">
-                        <Badge tone={locale.isActive ? "success" : "neutral"}>
-                          {locale.isActive ? "Active" : "Inactive"}
-                        </Badge>
-                        {locale.isDefault ? <Badge tone="warning">Default</Badge> : null}
-                      </div>
-                    </td>
-                    <td className="px-5 py-4">{locale.sortOrder}</td>
-                    <td className="px-5 py-4">
-                      <div className="flex flex-wrap gap-2">
-                        <Link href={`/admin/locales?edit=${locale.id}`}>
-                          <Button variant="secondary" size="sm">
-                            Edit
-                          </Button>
-                        </Link>
-                        {!locale.isDefault ? (
-                          <form action={setDefaultLocaleAction}>
-                            <input type="hidden" name="id" value={locale.id} />
-                            <Button type="submit" variant="ghost" size="sm">
-                              Set default
-                            </Button>
-                          </form>
-                        ) : null}
-                        {!locale.isDefault ? (
-                          <form action={toggleLocaleActiveAction}>
-                            <input type="hidden" name="id" value={locale.id} />
-                            <input
-                              type="hidden"
-                              name="isActive"
-                              value={locale.isActive ? "false" : "true"}
-                            />
-                            <Button type="submit" variant="ghost" size="sm">
-                              {locale.isActive ? "Deactivate" : "Activate"}
-                            </Button>
-                          </form>
-                        ) : null}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </CardBody>
+          <CardHeader title={`${locales.length} ${locales.length === 1 ? "locale" : "locales"}`} />
+          <ul className="divide-y divide-white/10">
+            {locales.map((locale) => {
+              const isDeletable = locale.code !== "en" && !locale.isDefault;
+              return (
+                <li
+                  key={locale.id}
+                  className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center"
+                >
+                  {/* Icon + identity */}
+                  <div className="flex items-center gap-3 sm:w-64 sm:shrink-0">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/5 text-white/60">
+                      <Globe className="h-3.5 w-3.5" />
+                    </span>
+                    <div>
+                      <span className="font-mono text-sm font-semibold text-white">{locale.code}</span>
+                      <span className="mx-2 text-white/20">·</span>
+                      <span className="text-sm text-white/70">{locale.name}</span>
+                    </div>
+                  </div>
+
+                  {/* Badges */}
+                  <div className="flex flex-wrap items-center gap-2 flex-1">
+                    <Badge tone={locale.isActive ? "success" : "neutral"}>
+                      {locale.isActive ? "Active" : "Inactive"}
+                    </Badge>
+                    {locale.isDefault && <Badge tone="warning">Default</Badge>}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link href={`/admin/locales?edit=${locale.id}`}>
+                      <Button variant="secondary" size="sm">Edit</Button>
+                    </Link>
+
+                    {!locale.isDefault && (
+                      <form action={setDefaultLocaleAction}>
+                        <input type="hidden" name="id" value={locale.id} />
+                        <Button type="submit" variant="ghost" size="sm">
+                          <Star className="h-3.5 w-3.5" />
+                          Set default
+                        </Button>
+                      </form>
+                    )}
+
+                    {!locale.isDefault && (
+                      <form action={toggleLocaleActiveAction}>
+                        <input type="hidden" name="id" value={locale.id} />
+                        <input type="hidden" name="isActive" value={locale.isActive ? "false" : "true"} />
+                        <Button type="submit" variant="ghost" size="sm">
+                          <Zap className="h-3.5 w-3.5" />
+                          {locale.isActive ? "Deactivate" : "Activate"}
+                        </Button>
+                      </form>
+                    )}
+
+                    {isDeletable ? (
+                      <ConfirmDeleteButton
+                        action={deleteLocaleAction}
+                        id={locale.id}
+                        itemName={locale.name}
+                        title="Delete locale?"
+                        description={`Delete "${locale.name}" (${locale.code})? All content for this locale will be orphaned.`}
+                        confirmLabel="Delete locale"
+                        buttonLabel="Delete"
+                      />
+                    ) : (
+                      <span className="text-xs text-white/25">
+                        {locale.code === "en" ? "Base locale" : "Default — change first"}
+                      </span>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         </Card>
       )}
     </div>

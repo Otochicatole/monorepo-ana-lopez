@@ -1,3 +1,4 @@
+import { Tags } from "lucide-react";
 import { requireAdmin } from "@/features/admin/infrastructure/admin-auth";
 import {
   createGalleryTypeAction,
@@ -6,12 +7,11 @@ import {
 import { prisma } from "@/shared/infrastructure/prisma";
 import { Field } from "../_components/form-fields";
 import { LocaleToggle, resolveAdminLocale } from "../_components/locale-toggle";
-import { PageHeader } from "@/features/admin/presentation/components/ui/page-shell";
+import { PageHeader, EmptyState } from "@/features/admin/presentation/components/ui/page-shell";
 import { Card, CardBody, CardHeader } from "@/features/admin/presentation/components/ui/card";
 import { Button } from "@/features/admin/presentation/components/ui/button";
 import { ConfirmDeleteButton } from "@/features/admin/presentation/components/ui/confirm-delete-button";
 import { Input } from "@/features/admin/presentation/components/ui/form-controls";
-import { EmptyState } from "@/features/admin/presentation/components/ui/page-shell";
 
 export default async function AdminGalleryTypesPage({
   searchParams,
@@ -24,9 +24,8 @@ export default async function AdminGalleryTypesPage({
   const types = await prisma.galleryType.findMany({
     where: { deletedAt: null },
     include: {
-      translations: {
-        where: { localeId: locale.id },
-      },
+      translations: { where: { localeId: locale.id } },
+      _count: { select: { galleries: { where: { deletedAt: null } } } },
     },
     orderBy: { documentId: "asc" },
   });
@@ -35,87 +34,111 @@ export default async function AdminGalleryTypesPage({
     <div>
       <PageHeader
         title="Gallery Types"
-        description="Manage gallery categories. Names are translated per locale; types are shared globally."
+        description="Manage gallery categories. Names are translated per locale."
       />
-      <LocaleToggle current={locale} basePath="/admin/gallery-types" />
 
-      <Card className="mb-8">
-        <CardHeader
-          title="Create gallery type"
-          description="Use a stable document ID shared across locales."
-        />
-        <CardBody>
-          <form action={createGalleryTypeAction} className="grid gap-4 lg:grid-cols-3">
-            <Field label="Document ID" hint="Example: gallery-type-editorial">
-              <Input name="documentId" required placeholder="gallery-type-editorial" />
-            </Field>
-            <input type="hidden" name="localeId" value={locale.id} />
-            <Field label={`Name (${locale.name})`}>
-              <Input name="name" required />
-            </Field>
-            <div className="flex items-end">
-              <Button type="submit" className="w-full lg:w-auto">
-                Save type
-              </Button>
-            </div>
-          </form>
-        </CardBody>
-      </Card>
+      {/* Create form + locale toggle */}
+      <div className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-start">
+        <Card className="flex-1">
+          <CardHeader
+            title="New type"
+            description="Document ID is permanent and shared across all locales."
+          />
+          <CardBody>
+            <form action={createGalleryTypeAction} className="flex flex-col gap-4 sm:flex-row sm:items-end">
+              <input type="hidden" name="localeId" value={locale.id} />
+              <Field label="Document ID" hint="e.g. gallery-editorial">
+                <Input
+                  name="documentId"
+                  required
+                  placeholder="gallery-editorial"
+                  pattern="[a-z0-9\-]+"
+                  title="Lowercase, numbers and hyphens only"
+                  className="font-mono"
+                />
+              </Field>
+              <Field label={`Name in ${locale.name}`}>
+                <Input name="name" required placeholder="Editorial" />
+              </Field>
+              <Button type="submit" className="shrink-0 self-end">Create</Button>
+            </form>
+          </CardBody>
+        </Card>
 
+        <div className="lg:pt-1 shrink-0">
+          <p className="mb-2 text-xs font-medium uppercase tracking-widest text-white/40">
+            Editing names in
+          </p>
+          <LocaleToggle current={locale} basePath="/admin/gallery-types" />
+        </div>
+      </div>
+
+      {/* List */}
       {types.length === 0 ? (
         <EmptyState
           title="No gallery types yet"
-          description="Create your first category to organize gallery items."
+          description="Create your first category to organise gallery items."
         />
       ) : (
         <Card>
-          <CardHeader title="Existing types" />
-          <CardBody className="overflow-x-auto p-0">
-            <table className="w-full min-w-[720px] text-left text-sm">
-              <thead className="border-b border-white/10 bg-white/[0.03] text-white/50">
-                <tr>
-                  <th className="px-5 py-3 font-medium">Document ID</th>
-                  <th className="px-5 py-3 font-medium">Name</th>
-                  <th className="px-5 py-3 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {types.map((type) => {
-                  const translation = type.translations[0];
-                  return (
-                    <tr key={`${type.id}-${locale.id}`} className="border-t border-white/10">
-                      <td className="px-5 py-4 font-mono text-xs text-white/70">
-                        {type.documentId}
-                      </td>
-                      <td className="px-5 py-4">
-                        <form key={`${type.id}-${locale.id}`} action={createGalleryTypeAction} className="flex gap-2">
-                          <input type="hidden" name="documentId" value={type.documentId} />
-                          <input type="hidden" name="localeId" value={locale.id} />
-                          <Input
-                            name="name"
-                            defaultValue={translation?.name || ""}
-                            placeholder={`Name in ${locale.name}`}
-                          />
-                          <Button type="submit" variant="secondary" size="sm">
-                            Save
-                          </Button>
-                        </form>
-                      </td>
-                      <td className="px-5 py-4">
-                        <ConfirmDeleteButton
-                          action={deleteGalleryTypeAction}
-                          id={type.id}
-                          itemName={type.documentId}
-                          title="Delete gallery type?"
-                          description={`Are you sure you want to delete "${type.documentId}"? Items linked to this type will lose their category.`}
-                        />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </CardBody>
+          <CardHeader
+            title={`${types.length} ${types.length === 1 ? "type" : "types"}`}
+            description={`Editing names in: ${locale.name}`}
+          />
+          <ul className="divide-y divide-white/10">
+            {types.map((type) => {
+              const translation = type.translations[0];
+              const itemCount = type._count.galleries;
+              return (
+                <li
+                  key={`${type.id}-${locale.id}`}
+                  className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center"
+                >
+                  {/* Icon + ID */}
+                  <div className="flex items-center gap-3 sm:w-56 sm:shrink-0">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-pk/10 text-pk">
+                      <Tags className="h-3.5 w-3.5" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate font-mono text-xs text-white/50">{type.documentId}</p>
+                      <p className="text-[11px] text-white/35">
+                        {itemCount} {itemCount === 1 ? "item" : "items"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Inline name edit form */}
+                  <form
+                    key={`${type.id}-${locale.id}`}
+                    action={createGalleryTypeAction}
+                    className="flex flex-1 items-center gap-2"
+                  >
+                    <input type="hidden" name="documentId" value={type.documentId} />
+                    <input type="hidden" name="localeId" value={locale.id} />
+                    <Input
+                      name="name"
+                      defaultValue={translation?.name ?? ""}
+                      placeholder={`Name in ${locale.name}…`}
+                      className="flex-1"
+                    />
+                    <Button type="submit" variant="secondary" size="sm" className="shrink-0">
+                      Save
+                    </Button>
+                  </form>
+
+                  {/* Delete */}
+                  <ConfirmDeleteButton
+                    action={deleteGalleryTypeAction}
+                    id={type.id}
+                    itemName={type.documentId}
+                    title="Delete gallery type?"
+                    description={`Delete "${type.documentId}"? ${itemCount > 0 ? `${itemCount} item(s) will lose their category.` : "No linked items."}`}
+                    buttonLabel="Delete"
+                  />
+                </li>
+              );
+            })}
+          </ul>
         </Card>
       )}
     </div>

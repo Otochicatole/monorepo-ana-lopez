@@ -43,3 +43,37 @@ body {
 .oswald {
   font-family: var(--font-oswald), sans-serif;
 }
+
+/* ── Admin page transitions ── */
+@keyframes admin-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes admin-skeleton-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes nav-progress-indeterminate {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+
+.admin-page-enter {
+  animation: admin-fade-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.admin-skeleton {
+  animation: admin-skeleton-pulse 1.6s ease-in-out infinite;
+}
+
+.nav-bar-indeterminate {
+  animation: nav-progress-indeterminate 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

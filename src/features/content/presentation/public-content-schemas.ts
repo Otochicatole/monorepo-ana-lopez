@@ -1,10 +1,12 @@
 import { z } from "zod";
-import { isValidLocaleCode } from "@/shared/domain/locale";
+import { isValidLocaleCode, normalizeLocaleCode } from "@/shared/domain/locale";
 
 export const LocaleCodeSchema = z
   .string()
+  .trim()
   .min(2)
   .max(12)
+  .transform(normalizeLocaleCode)
   .refine(isValidLocaleCode, "Invalid locale code format");
 
 export const LocaleIdSchema = z.string().cuid();

@@ -50,7 +50,7 @@ async function ensureSingleDefault(excludeId?: string) {
 export async function upsertLocaleAction(formData: FormData) {
   const admin = await requireAdmin();
   const raw = Object.fromEntries(formData);
-  const data = UpsertLocaleSchema.parse({
+  const parsed = UpsertLocaleSchema.safeParse({
     ...raw,
     isDefault: raw.isDefault === "on" || raw.isDefault === "true",
     isActive:
@@ -59,11 +59,31 @@ export async function upsertLocaleAction(formData: FormData) {
       (!("isActive" in raw) && !raw.id),
   });
 
+  if (!parsed.success) {
+    const message =
+      parsed.error.issues[0]?.message ?? "Invalid locale data";
+    redirect(
+      `/admin/locales?error=${encodeURIComponent(message)}${raw.id ? `&edit=${raw.id}` : ""}`
+    );
+  }
+
+  const data = parsed.data;
+
   if (data.isDefault) {
     await prisma.locale.updateMany({
       where: data.id ? { id: { not: data.id } } : undefined,
       data: { isDefault: false },
     });
+  }
+
+  // Auto sortOrder for new locales: max existing + 1
+  let sortOrder = data.sortOrder ?? 0;
+  if (!data.id) {
+    const maxRecord = await prisma.locale.findFirst({
+      orderBy: { sortOrder: "desc" },
+      select: { sortOrder: true },
+    });
+    sortOrder = (maxRecord?.sortOrder ?? -1) + 1;
   }
 
   const record = data.id
@@ -74,7 +94,7 @@ export async function upsertLocaleAction(formData: FormData) {
           name: data.name,
           isDefault: data.isDefault,
           isActive: data.isActive,
-          sortOrder: data.sortOrder,
+          sortOrder: data.sortOrder ?? 0,
         },
       })
     : await prisma.locale.create({
@@ -83,7 +103,7 @@ export async function upsertLocaleAction(formData: FormData) {
           name: data.name,
           isDefault: data.isDefault,
           isActive: data.isActive,
-          sortOrder: data.sortOrder,
+          sortOrder,
         },
       });
 
@@ -100,6 +120,39 @@ export async function upsertLocaleAction(formData: FormData) {
   revalidatePath("/admin/locales");
   revalidatePath("/admin");
   redirect("/admin/locales?saved=1");
+}
+
+export async function deleteLocaleAction(formData: FormData) {
+  const admin = await requireAdmin();
+  const id = z.string().cuid().parse(formData.get("id"));
+
+  const locale = await prisma.locale.findUnique({ where: { id } });
+  if (!locale) throw new Error("Locale not found");
+
+  if (locale.code === "en") {
+    throw new Error('Cannot delete the base English locale ("en")');
+  }
+  if (locale.isDefault) {
+    throw new Error("Cannot delete the default locale. Set another locale as default first.");
+  }
+
+  const activeCount = await prisma.locale.count({ where: { isActive: true } });
+  if (locale.isActive && activeCount <= 1) {
+    throw new Error("Cannot delete the only active locale.");
+  }
+
+  await prisma.locale.delete({ where: { id } });
+
+  await recordAudit({
+    actorId: admin.id,
+    action: "delete",
+    resource: "locale",
+    resourceId: id,
+    metadata: { code: locale.code },
+  });
+
+  revalidatePath("/admin/locales");
+  revalidatePath("/admin");
 }
 
 export async function toggleLocaleActiveAction(formData: FormData) {

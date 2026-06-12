@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import {
   FileText,
   FolderOpen,
@@ -10,6 +10,7 @@ import {
   Home,
   Images,
   LayoutDashboard,
+  Loader2,
   LogOut,
   Menu,
   ScrollText,
@@ -50,6 +51,19 @@ const navGroups = [
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [pending, setPending] = useState<string | null>(null);
+
+  // Clear pending when navigation resolves
+  useEffect(() => {
+    setPending(null);
+  }, [pathname]);
+
+  function handleClick(href: string) {
+    if (href === pathname) return;
+    setPending(href);
+    onNavigate?.();
+  }
 
   return (
     <nav className="space-y-6">
@@ -61,24 +75,31 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
           <ul className="space-y-1">
             {group.items.map(({ href, label, icon: Icon }) => {
               const active =
-                href === "/admin"
-                  ? pathname === "/admin"
-                  : pathname.startsWith(href);
+                href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
+              const isPending = pending === href;
 
               return (
                 <li key={href}>
                   <Link
                     href={href}
-                    onClick={onNavigate}
+                    onClick={() => handleClick(href)}
+                    onMouseEnter={() => router.prefetch(href)}
                     className={cn(
                       "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                      active
+                      active || isPending
                         ? "bg-pk/15 text-pk"
                         : "text-white/70 hover:bg-white/5 hover:text-white"
                     )}
                   >
-                    <Icon className="h-4 w-4 shrink-0" aria-hidden />
-                    {label}
+                    {isPending ? (
+                      <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+                    ) : (
+                      <Icon className="h-4 w-4 shrink-0" aria-hidden />
+                    )}
+                    <span className="flex-1">{label}</span>
+                    {isPending && (
+                      <span className="h-1.5 w-1.5 rounded-full bg-pk animate-pulse" />
+                    )}
                   </Link>
                 </li>
               );
@@ -92,33 +113,46 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 
 export function AdminSidebar() {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  const prevRef = useRef(pathname);
+
+  // Close mobile sidebar on navigation
+  useEffect(() => {
+    if (prevRef.current !== pathname) {
+      prevRef.current = pathname;
+      setOpen(false);
+    }
+  }, [pathname]);
 
   return (
     <>
+      {/* Mobile menu button */}
       <button
         type="button"
-        className="fixed left-4 top-4 z-40 inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-neutral-950 text-white lg:hidden"
+        className="fixed left-4 top-4 z-40 inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-neutral-950 text-white transition-colors hover:bg-white/5 lg:hidden"
         onClick={() => setOpen(true)}
         aria-label="Open navigation"
       >
         <Menu className="h-5 w-5" />
       </button>
 
-      {open ? (
+      {/* Overlay */}
+      {open && (
         <button
           type="button"
-          className="fixed inset-0 z-40 bg-black/60 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
           onClick={() => setOpen(false)}
           aria-label="Close navigation overlay"
         />
-      ) : null}
+      )}
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-white/10 bg-neutral-950 transition-transform lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-white/10 bg-neutral-950 transition-transform duration-300 ease-out lg:translate-x-0",
           open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
+        {/* Logo */}
         <div className="flex items-center justify-between border-b border-white/10 px-5 py-5">
           <Link href="/admin" className="oswald text-xl tracking-[0.18em] text-white">
             CMS Ana Lopez
@@ -133,10 +167,12 @@ export function AdminSidebar() {
           </button>
         </div>
 
+        {/* Nav */}
         <div className="flex-1 overflow-y-auto px-3 py-5">
-          <NavLinks onNavigate={() => setOpen(false)} />
+          <NavLinks />
         </div>
 
+        {/* Logout */}
         <div className="border-t border-white/10 p-4">
           <form action={logoutAction}>
             <button
