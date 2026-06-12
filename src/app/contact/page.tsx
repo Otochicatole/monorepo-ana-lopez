@@ -4,9 +4,16 @@ import Image from "next/image";
 import Link from "next/link";
 import React, { useState } from "react";
 import { useTranslations } from "@/core/i18n/use-translations";
+import {
+  getGmailComposeHref,
+  siteContact,
+} from "@/config/site-contact";
 
 export default function ContactPage() {
     const t = useTranslations();
+    const gmailHref = getGmailComposeHref();
+    const whatsappUrl = siteContact.whatsappUrl;
+    const instagramUrl = siteContact.instagramUrl;
     const [formData, setFormData] = useState({
         name: '',
         lastName: '',
@@ -106,45 +113,51 @@ export default function ContactPage() {
                     </form>
                 </section>
                 <div className="flex flex-row items-center justify-center gap-5 mt-3">
-                    <Link
-                        href={process.env.NEXT_PUBLIC_CONTACT_EMAIL ? `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(process.env.NEXT_PUBLIC_CONTACT_EMAIL)}` : '/'}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        <Image
-                            className="hover:scale-110 cursor-pointer transition-all"
-                            src="/svgs/mail.svg"
-                            alt="Email"
-                            width={30}
-                            height={30}
-                        />
-                    </Link>
-                    <Link
-                        href={process.env.NEXT_PUBLIC_WHATSAPP_URL || '/'}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        <Image
-                            className="hover:scale-110 cursor-pointer transition-all"
-                            src="/svgs/wp.svg"
-                            alt="WhatsApp"
-                            width={30}
-                            height={30}
-                        />
-                    </Link>
-                    <Link
-                        href={process.env.NEXT_PUBLIC_INSTAGRAM_URL || '/'}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        <Image
-                            className="hover:scale-110 cursor-pointer transition-all"
-                            src="/svgs/ig.svg"
-                            alt="Instagram"
-                            width={30}
-                            height={30}
-                        />
-                    </Link>
+                    {gmailHref && (
+                        <Link
+                            href={gmailHref}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            <Image
+                                className="hover:scale-110 cursor-pointer transition-all"
+                                src="/svgs/mail.svg"
+                                alt="Email"
+                                width={30}
+                                height={30}
+                            />
+                        </Link>
+                    )}
+                    {whatsappUrl && (
+                        <Link
+                            href={whatsappUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            <Image
+                                className="hover:scale-110 cursor-pointer transition-all"
+                                src="/svgs/wp.svg"
+                                alt="WhatsApp"
+                                width={30}
+                                height={30}
+                            />
+                        </Link>
+                    )}
+                    {instagramUrl && (
+                        <Link
+                            href={instagramUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            <Image
+                                className="hover:scale-110 cursor-pointer transition-all"
+                                src="/svgs/ig.svg"
+                                alt="Instagram"
+                                width={30}
+                                height={30}
+                            />
+                        </Link>
+                    )}
                 </div>
             </main>
         </>
