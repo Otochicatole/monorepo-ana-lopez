@@ -9,7 +9,6 @@ import { Field } from "../_components/form-fields";
 import { LocaleToggle, resolveAdminLocale } from "../_components/locale-toggle";
 import { PageHeader, EmptyState } from "@/features/admin/presentation/components/ui/page-shell";
 import { Card, CardBody, CardHeader } from "@/features/admin/presentation/components/ui/card";
-import { Button } from "@/features/admin/presentation/components/ui/button";
 import { SubmitButton } from "@/features/admin/presentation/components/ui/submit-button";
 import { ConfirmDeleteButton } from "@/features/admin/presentation/components/ui/confirm-delete-button";
 import { Input } from "@/features/admin/presentation/components/ui/form-controls";
@@ -39,14 +38,21 @@ export default async function AdminGalleryTypesPage({
       />
 
       {/* Create form + locale toggle */}
-      <div className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-start">
-        <Card className="flex-1">
+      <div className="mb-8 flex flex-col gap-6">
+        <div>
+          <p className="mb-2 text-xs font-medium uppercase tracking-widest text-white/40">
+            Editing names in
+          </p>
+          <LocaleToggle current={locale} basePath="/admin/gallery-types" />
+        </div>
+
+        <Card>
           <CardHeader
             title="New type"
             description="Document ID is permanent and shared across all locales."
           />
           <CardBody>
-            <form action={createGalleryTypeAction} className="flex flex-col gap-4 sm:flex-row sm:items-end">
+            <form action={createGalleryTypeAction} className="flex max-w-md flex-col gap-4">
               <input type="hidden" name="localeId" value={locale.id} />
               <Field label="Document ID" hint="e.g. gallery-editorial">
                 <Input
@@ -61,17 +67,10 @@ export default async function AdminGalleryTypesPage({
               <Field label={`Name in ${locale.name}`}>
                 <Input name="name" required placeholder="Editorial" />
               </Field>
-              <SubmitButton className="shrink-0 self-end">Create</SubmitButton>
+              <SubmitButton className="self-start">Create</SubmitButton>
             </form>
           </CardBody>
         </Card>
-
-        <div className="lg:pt-1 shrink-0">
-          <p className="mb-2 text-xs font-medium uppercase tracking-widest text-white/40">
-            Editing names in
-          </p>
-          <LocaleToggle current={locale} basePath="/admin/gallery-types" />
-        </div>
       </div>
 
       {/* List */}
@@ -93,10 +92,10 @@ export default async function AdminGalleryTypesPage({
               return (
                 <li
                   key={`${type.id}-${locale.id}`}
-                  className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center"
+                  className="flex flex-col gap-4 px-5 py-4"
                 >
                   {/* Icon + ID */}
-                  <div className="flex items-center gap-3 sm:w-56 sm:shrink-0">
+                  <div className="flex items-center gap-3">
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-pk/10 text-pk">
                       <Tags className="h-3.5 w-3.5" />
                     </span>
@@ -108,11 +107,11 @@ export default async function AdminGalleryTypesPage({
                     </div>
                   </div>
 
-                  {/* Inline name edit form */}
+                  {/* Name edit form */}
                   <form
                     key={`${type.id}-${locale.id}`}
                     action={createGalleryTypeAction}
-                    className="flex flex-1 items-center gap-2"
+                    className="flex min-w-0 items-center gap-2"
                   >
                     <input type="hidden" name="documentId" value={type.documentId} />
                     <input type="hidden" name="localeId" value={locale.id} />
@@ -120,7 +119,7 @@ export default async function AdminGalleryTypesPage({
                       name="name"
                       defaultValue={translation?.name ?? ""}
                       placeholder={`Name in ${locale.name}…`}
-                      className="flex-1"
+                      className="min-w-0 flex-1"
                     />
                     <SubmitButton variant="secondary" size="sm" className="shrink-0">
                       Save
@@ -135,6 +134,7 @@ export default async function AdminGalleryTypesPage({
                     title="Delete gallery type?"
                     description={`Delete "${type.documentId}"? ${itemCount > 0 ? `${itemCount} item(s) will lose their category.` : "No linked items."}`}
                     buttonLabel="Delete"
+                    buttonClassName="self-start"
                   />
                 </li>
               );
