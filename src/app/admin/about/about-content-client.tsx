@@ -9,6 +9,7 @@ import {
 import { PageHeader } from "@/features/admin/presentation/components/ui/page-shell";
 import { Card, CardBody, CardHeader } from "@/features/admin/presentation/components/ui/card";
 import { Button } from "@/features/admin/presentation/components/ui/button";
+import { SubmitButton } from "@/features/admin/presentation/components/ui/submit-button";
 import { Textarea } from "@/features/admin/presentation/components/ui/form-controls";
 import type { LocaleEntity } from "@/features/locale/domain/locale";
 
@@ -113,7 +114,7 @@ export function AboutContentClient({
 
         {/* Save */}
         <div className="flex items-center gap-3">
-          <Button type="submit">Save about content</Button>
+          <SubmitButton>Save about content</SubmitButton>
           <div className="flex items-center gap-1.5 text-xs text-white/35">
             <Globe className="h-3.5 w-3.5" />
             Saving for: <span className="font-semibold text-white/55">{locale.name}</span>

@@ -141,7 +141,7 @@ export function MediaPickerField({
                   type="button"
                   onClick={() => handleSelect(item.id)}
                   className={cn(
-                    "grid grid-cols-[80px_1fr] gap-3 rounded-lg border p-3 text-left transition-colors hover:border-pk/50",
+                    "grid cursor-pointer grid-cols-[80px_1fr] gap-3 rounded-lg border p-3 text-left transition-colors hover:border-pk/50",
                     isSelected
                       ? "border-pk bg-pk/10 ring-1 ring-pk/30"
                       : "border-white/10 bg-neutral-900/50"

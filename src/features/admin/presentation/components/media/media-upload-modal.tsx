@@ -8,6 +8,7 @@ import {
 } from "@/features/admin/application/admin-actions";
 import { AdminModal } from "@/features/admin/presentation/components/ui/modal";
 import { Button } from "@/features/admin/presentation/components/ui/button";
+import { SubmitButton } from "@/features/admin/presentation/components/ui/submit-button";
 import { Alert } from "@/features/admin/presentation/components/ui/page-shell";
 import { FormField, Input } from "@/features/admin/presentation/components/ui/form-controls";
 import type { MediaPickerItem } from "./media-picker-field";
@@ -47,9 +48,9 @@ export function MediaUploadModal({ open, onClose, onUploaded }: MediaUploadModal
           <Button type="button" variant="secondary" onClick={onClose} disabled={pending}>
             Cancel
           </Button>
-          <Button type="submit" form={formId} disabled={pending}>
-            {pending ? "Uploading..." : "Upload image"}
-          </Button>
+          <SubmitButton form={formId} pending={pending} pendingLabel="Uploading...">
+            Upload image
+          </SubmitButton>
         </>
       }
     >

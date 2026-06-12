@@ -14,6 +14,7 @@ import {
 import { PageHeader, EmptyState } from "@/features/admin/presentation/components/ui/page-shell";
 import { Card, CardHeader } from "@/features/admin/presentation/components/ui/card";
 import { Button } from "@/features/admin/presentation/components/ui/button";
+import { SubmitButton } from "@/features/admin/presentation/components/ui/submit-button";
 import { ConfirmDeleteButton } from "@/features/admin/presentation/components/ui/confirm-delete-button";
 import { Field } from "../_components/form-fields";
 import { Input } from "@/features/admin/presentation/components/ui/form-controls";
@@ -96,7 +97,7 @@ function GalleryItemRow({
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
-            className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-white/60 transition-colors hover:border-white/20 hover:text-white"
+            className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-white/60 transition-colors hover:border-white/20 hover:text-white"
           >
             {expanded ? (
               <><ChevronUp className="h-3.5 w-3.5" /> Close</>
@@ -144,7 +145,7 @@ function GalleryItemRow({
               />
             </div>
             <div className="sm:col-span-2 lg:col-span-3">
-              <Button type="submit" variant="secondary" size="sm">Save changes</Button>
+              <SubmitButton variant="secondary" size="sm">Save changes</SubmitButton>
             </div>
           </form>
         </div>
@@ -232,7 +233,7 @@ export function GalleryItemsClient({
               <button
                 type="button"
                 onClick={() => setSearch("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
+                className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-white/40 hover:text-white"
                 aria-label="Clear search"
               >
                 <X className="h-4 w-4" />
@@ -265,7 +266,7 @@ export function GalleryItemsClient({
                 type="button"
                 onClick={() => setDateSort(v)}
                 className={cn(
-                  "rounded-lg px-3 py-1.5 text-xs font-semibold capitalize transition-colors",
+                  "cursor-pointer rounded-lg px-3 py-1.5 text-xs font-semibold capitalize transition-colors",
                   dateSort === v ? "bg-pk text-neutral-950" : "text-white/60 hover:bg-white/5 hover:text-white"
                 )}
               >
@@ -285,7 +286,7 @@ export function GalleryItemsClient({
             <button
               type="button"
               onClick={clearFilters}
-              className="flex items-center gap-1 rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-white/60 hover:border-white/20 hover:text-white"
+              className="flex cursor-pointer items-center gap-1 rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-white/60 hover:border-white/20 hover:text-white"
             >
               <X className="h-3 w-3" /> Clear filters
             </button>

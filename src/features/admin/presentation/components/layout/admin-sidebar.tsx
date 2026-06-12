@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/features/admin/presentation/lib/cn";
 import { logoutAction } from "@/features/admin/application/admin-actions";
+import { SubmitButton } from "@/features/admin/presentation/components/ui/submit-button";
 
 const navGroups = [
   {
@@ -129,7 +130,7 @@ export function AdminSidebar() {
       {/* Mobile menu button */}
       <button
         type="button"
-        className="fixed left-4 top-4 z-40 inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-neutral-950 text-white transition-colors hover:bg-white/5 lg:hidden"
+        className="fixed left-4 top-4 z-40 inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg border border-white/10 bg-neutral-950 text-white transition-colors hover:bg-white/5 lg:hidden"
         onClick={() => setOpen(true)}
         aria-label="Open navigation"
       >
@@ -140,7 +141,7 @@ export function AdminSidebar() {
       {open && (
         <button
           type="button"
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 cursor-pointer bg-black/60 backdrop-blur-sm lg:hidden"
           onClick={() => setOpen(false)}
           aria-label="Close navigation overlay"
         />
@@ -159,7 +160,7 @@ export function AdminSidebar() {
           </Link>
           <button
             type="button"
-            className="rounded-lg p-2 text-white/60 hover:bg-white/5 lg:hidden"
+            className="cursor-pointer rounded-lg p-2 text-white/60 hover:bg-white/5 lg:hidden"
             onClick={() => setOpen(false)}
             aria-label="Close navigation"
           >
@@ -175,13 +176,13 @@ export function AdminSidebar() {
         {/* Logout */}
         <div className="border-t border-white/10 p-4">
           <form action={logoutAction}>
-            <button
-              type="submit"
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white"
+            <SubmitButton
+              variant="ghost"
+              className="w-full justify-start px-3 py-2.5 text-sm font-medium text-white/70 hover:bg-white/5 hover:text-white"
             >
               <LogOut className="h-4 w-4" aria-hidden />
               Logout
-            </button>
+            </SubmitButton>
           </form>
         </div>
       </aside>

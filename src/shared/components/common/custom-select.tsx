@@ -244,7 +244,7 @@ export function CustomSelect<V extends string | number = string>({
         disabled={disabled}
         onClick={toggleOpen}
         className={cn(
-          "flex w-full items-center rounded-xl border bg-neutral-900/70 text-left font-medium transition-colors",
+          "flex w-full cursor-pointer items-center rounded-xl border bg-neutral-900/70 text-left font-medium transition-colors",
           "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pk",
           "disabled:cursor-not-allowed disabled:opacity-50",
           open

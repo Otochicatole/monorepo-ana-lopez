@@ -1,9 +1,11 @@
 "use client";
 
+import { useCallback, useState } from "react";
 import { createGalleryItemAction } from "@/features/admin/application/admin-actions";
 import { MediaPickerField, type MediaPickerItem } from "@/features/admin/presentation/components/media/media-picker-field";
 import { AdminModal } from "@/features/admin/presentation/components/ui/modal";
 import { Button } from "@/features/admin/presentation/components/ui/button";
+import { FormPendingBridge, SubmitButton } from "@/features/admin/presentation/components/ui/submit-button";
 import { Field } from "../_components/form-fields";
 import { Input } from "@/features/admin/presentation/components/ui/form-controls";
 import { CustomSelect } from "@/shared/components/common/custom-select";
@@ -24,6 +26,11 @@ export function CreateGalleryItemModal({
   types,
   suggestedDocumentId,
 }: CreateGalleryItemModalProps) {
+  const [submitPending, setSubmitPending] = useState(false);
+  const handlePendingChange = useCallback((pending: boolean) => {
+    setSubmitPending(pending);
+  }, []);
+
   return (
     <AdminModal
       open={open}
@@ -32,12 +39,12 @@ export function CreateGalleryItemModal({
       description="Document ID is optional and will be generated automatically if left blank."
       footer={
         <>
-          <Button type="button" variant="secondary" onClick={onClose}>
+          <Button type="button" variant="secondary" onClick={onClose} disabled={submitPending}>
             Cancel
           </Button>
-          <Button type="submit" form="create-gallery-item-form">
+          <SubmitButton form="create-gallery-item-form" pending={submitPending}>
             Create item
-          </Button>
+          </SubmitButton>
         </>
       }
     >
@@ -47,6 +54,7 @@ export function CreateGalleryItemModal({
         onSubmit={onClose}
         className="space-y-4"
       >
+        <FormPendingBridge onPendingChange={handlePendingChange} />
         <Field label="Document ID" hint="Leave blank to auto-generate">
           <Input name="documentId" placeholder={suggestedDocumentId} />
         </Field>

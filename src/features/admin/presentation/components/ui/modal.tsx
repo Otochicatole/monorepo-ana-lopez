@@ -82,7 +82,7 @@ export function AdminModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg p-2 text-white/60 hover:bg-white/10 hover:text-white"
+              className="rounded-lg p-2 cursor-pointer text-white/60 hover:bg-white/10 hover:text-white"
               aria-label="Close"
             >
               <X className="h-5 w-5" />
@@ -144,7 +144,7 @@ export function AdminModalWide({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg p-2 text-white/60 hover:bg-white/10 hover:text-white"
+              className="rounded-lg p-2 cursor-pointer text-white/60 hover:bg-white/10 hover:text-white"
               aria-label="Close"
             >
               <X className="h-5 w-5" />

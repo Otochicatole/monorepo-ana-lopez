@@ -11,6 +11,7 @@ import { Field } from "../_components/form-fields";
 import { PageHeader, EmptyState } from "@/features/admin/presentation/components/ui/page-shell";
 import { Card, CardHeader } from "@/features/admin/presentation/components/ui/card";
 import { Button } from "@/features/admin/presentation/components/ui/button";
+import { SubmitButton } from "@/features/admin/presentation/components/ui/submit-button";
 import { ConfirmDeleteButton } from "@/features/admin/presentation/components/ui/confirm-delete-button";
 import { Input } from "@/features/admin/presentation/components/ui/form-controls";
 import { MediaUploadButton } from "@/features/admin/presentation/components/media/media-upload-modal";
@@ -68,7 +69,7 @@ function MediaRow({ item }: { item: MediaItem }) {
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
-            className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-white/60 transition-colors hover:border-white/20 hover:text-white"
+            className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-white/60 transition-colors hover:border-white/20 hover:text-white"
           >
             {expanded ? (
               <>
@@ -120,7 +121,7 @@ function MediaRow({ item }: { item: MediaItem }) {
               </Field>
             </div>
             <div className="flex items-end sm:col-span-2 lg:col-span-3">
-              <Button type="submit" variant="secondary" size="sm">Save changes</Button>
+              <SubmitButton variant="secondary" size="sm">Save changes</SubmitButton>
             </div>
           </form>
         </div>

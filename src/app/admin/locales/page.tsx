@@ -16,6 +16,7 @@ import {
 } from "@/features/admin/presentation/components/ui/page-shell";
 import { Card, CardBody, CardHeader } from "@/features/admin/presentation/components/ui/card";
 import { Button } from "@/features/admin/presentation/components/ui/button";
+import { SubmitButton } from "@/features/admin/presentation/components/ui/submit-button";
 import { ConfirmDeleteButton } from "@/features/admin/presentation/components/ui/confirm-delete-button";
 import { FormField, Input } from "@/features/admin/presentation/components/ui/form-controls";
 
@@ -115,9 +116,9 @@ export default async function AdminLocalesPage({
                 />
                 Default
               </label>
-              <Button type="submit">
+              <SubmitButton>
                 {editing ? "Update" : "Create locale"}
-              </Button>
+              </SubmitButton>
             </div>
           </form>
         </CardBody>
@@ -169,10 +170,10 @@ export default async function AdminLocalesPage({
                     {!locale.isDefault && (
                       <form action={setDefaultLocaleAction}>
                         <input type="hidden" name="id" value={locale.id} />
-                        <Button type="submit" variant="ghost" size="sm">
+                        <SubmitButton variant="ghost" size="sm">
                           <Star className="h-3.5 w-3.5" />
                           Set default
-                        </Button>
+                        </SubmitButton>
                       </form>
                     )}
 
@@ -180,10 +181,10 @@ export default async function AdminLocalesPage({
                       <form action={toggleLocaleActiveAction}>
                         <input type="hidden" name="id" value={locale.id} />
                         <input type="hidden" name="isActive" value={locale.isActive ? "false" : "true"} />
-                        <Button type="submit" variant="ghost" size="sm">
+                        <SubmitButton variant="ghost" size="sm">
                           <Zap className="h-3.5 w-3.5" />
                           {locale.isActive ? "Deactivate" : "Activate"}
-                        </Button>
+                        </SubmitButton>
                       </form>
                     )}
 

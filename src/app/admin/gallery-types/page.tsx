@@ -10,6 +10,7 @@ import { LocaleToggle, resolveAdminLocale } from "../_components/locale-toggle";
 import { PageHeader, EmptyState } from "@/features/admin/presentation/components/ui/page-shell";
 import { Card, CardBody, CardHeader } from "@/features/admin/presentation/components/ui/card";
 import { Button } from "@/features/admin/presentation/components/ui/button";
+import { SubmitButton } from "@/features/admin/presentation/components/ui/submit-button";
 import { ConfirmDeleteButton } from "@/features/admin/presentation/components/ui/confirm-delete-button";
 import { Input } from "@/features/admin/presentation/components/ui/form-controls";
 
@@ -60,7 +61,7 @@ export default async function AdminGalleryTypesPage({
               <Field label={`Name in ${locale.name}`}>
                 <Input name="name" required placeholder="Editorial" />
               </Field>
-              <Button type="submit" className="shrink-0 self-end">Create</Button>
+              <SubmitButton className="shrink-0 self-end">Create</SubmitButton>
             </form>
           </CardBody>
         </Card>
@@ -121,9 +122,9 @@ export default async function AdminGalleryTypesPage({
                       placeholder={`Name in ${locale.name}…`}
                       className="flex-1"
                     />
-                    <Button type="submit" variant="secondary" size="sm" className="shrink-0">
+                    <SubmitButton variant="secondary" size="sm" className="shrink-0">
                       Save
-                    </Button>
+                    </SubmitButton>
                   </form>
 
                   {/* Delete */}

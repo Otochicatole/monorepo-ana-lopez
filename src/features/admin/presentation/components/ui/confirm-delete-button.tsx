@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { Loader2 } from "lucide-react";
 import { AdminModal } from "./modal";
 import { Button } from "./button";
 import { cn } from "@/features/admin/presentation/lib/cn";
@@ -34,14 +35,24 @@ export function ConfirmDeleteButton({
 }: ConfirmDeleteButtonProps) {
   const [open, setOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const wasPendingRef = useRef(false);
+  const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (wasPendingRef.current && !isPending) {
+      setOpen(false);
+    }
+    wasPendingRef.current = isPending;
+  }, [isPending]);
 
   const resolvedDescription =
     description ??
     `Are you sure you want to delete "${itemName}"? This action cannot be undone.`;
 
   function handleConfirm() {
-    formRef.current?.requestSubmit();
-    setOpen(false);
+    startTransition(() => {
+      formRef.current?.requestSubmit();
+    });
   }
 
   return (
@@ -67,10 +78,11 @@ export function ConfirmDeleteButton({
         description={resolvedDescription}
         footer={
           <>
-            <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
+            <Button type="button" variant="secondary" onClick={() => setOpen(false)} disabled={isPending}>
               Cancel
             </Button>
-            <Button type="button" variant="danger" onClick={handleConfirm}>
+            <Button type="button" variant="danger" onClick={handleConfirm} disabled={isPending}>
+              {isPending && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
               {confirmLabel}
             </Button>
           </>

@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getCurrentAdmin } from "@/features/admin/infrastructure/admin-auth";
 import { loginAction } from "@/features/admin/application/admin-actions";
 import { Card, CardBody } from "@/features/admin/presentation/components/ui/card";
-import { Button } from "@/features/admin/presentation/components/ui/button";
+import { SubmitButton } from "@/features/admin/presentation/components/ui/submit-button";
 import { FormField, Input } from "@/features/admin/presentation/components/ui/form-controls";
 import { Alert } from "@/features/admin/presentation/components/ui/page-shell";
 
@@ -38,9 +38,7 @@ export default async function AdminLoginPage({
                 autoComplete="current-password"
               />
             </FormField>
-            <Button type="submit" className="w-full">
-              Sign in
-            </Button>
+            <SubmitButton className="w-full">Sign in</SubmitButton>
           </form>
         </CardBody>
       </Card>
