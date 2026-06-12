@@ -10,7 +10,6 @@ import {
 import { Field } from "../_components/form-fields";
 import { PageHeader, EmptyState } from "@/features/admin/presentation/components/ui/page-shell";
 import { Card, CardHeader } from "@/features/admin/presentation/components/ui/card";
-import { Button } from "@/features/admin/presentation/components/ui/button";
 import { SubmitButton } from "@/features/admin/presentation/components/ui/submit-button";
 import { ConfirmDeleteButton } from "@/features/admin/presentation/components/ui/confirm-delete-button";
 import { Input } from "@/features/admin/presentation/components/ui/form-controls";
@@ -147,10 +146,7 @@ export function MediaLibraryClient({ media }: { media: MediaItem[] }) {
         />
       ) : (
         <Card>
-          <CardHeader
-            title={`${media.length} ${media.length === 1 ? "file" : "files"}`}
-            action={<MediaUploadButton />}
-          />
+          <CardHeader title={`${media.length} ${media.length === 1 ? "file" : "files"}`} />
           <ul className={cn("divide-y divide-white/10")}>
             {media.map((item) => (
               <MediaRow key={item.id} item={item} />
