@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 
-const Token = process.env.RESEND_TOKEN;
-const resend = new Resend(Token);
-
 export async function POST(req: NextRequest) {
     const { name, lastName, phone, message } = await req.json();
+    const token = process.env.RESEND_TOKEN;
+
+    if (!token) {
+        return NextResponse.json({ error: 'Email service is not configured' }, { status: 500 });
+    }
+
+    const resend = new Resend(token);
 
     try {
         await resend.emails.send({

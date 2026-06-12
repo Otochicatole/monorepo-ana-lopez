@@ -1,14 +1,21 @@
-import { httpGetHome } from "@/core/http/http-get-home";
 import CardAbout from "@/features/home/components/ui/card-about";
 import Works from "@/features/home/components/ui/works";
 import { getServerLocale } from "@/core/context/get-server-locale";
+import { contentUseCases } from "@/features/content/infrastructure/content-container";
+import { homeToStrapiDto } from "@/features/content/presentation/strapi-compatible-dtos";
 import FadeInObserverSides from "@/shared/components/common/fade-in-observer-sides";
 import ScrollNextSection from "@/shared/components/common/scroll-into-view";
 import { ArrowDown } from "lucide-react";
 
 export default async function HomePage() {
   const locale = await getServerLocale();
-  const homeData = await httpGetHome(locale);
+  const home = await contentUseCases.getHomeContent.execute(locale);
+
+  if (!home) {
+    throw new Error(`Home content not found for locale ${locale}`);
+  }
+
+  const homeData = { data: homeToStrapiDto(home) };
 
   const { about, imageAbout } = homeData.data;
 

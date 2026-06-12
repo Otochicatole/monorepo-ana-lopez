@@ -3,29 +3,39 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+    "dev": "../node_modules/.bin/next dev",
+    "build": "../node_modules/.bin/next build",
+    "start": "../node_modules/.bin/next start",
+    "lint": "eslint",
+    "postinstall": "prisma generate",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio",
+    "prisma:seed": "node prisma/seed.mjs"
   },
   "dependencies": {
+    "@prisma/client": "^6.19.3",
     "framer-motion": "^12.34.4",
     "lucide-react": "^0.575.0",
-    "next": "^16.2.2",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "resend": "^6.9.3"
+    "next": "^15.5.19",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "resend": "^6.9.3",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4",
+    "@types/minimatch": "^6.0.0",
     "@types/node": "20",
-    "@types/react": "19",
-    "@types/react-dom": "19",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "9",
-    "eslint-config-next": "16.1.6",
+    "eslint-config-next": "^15.5.19",
+    "prisma": "^6.19.3",
     "tailwindcss": "4",
-    "typescript": "5"
+    "typescript": "5",
+    "typescript-eslint": "^8.61.0"
   },
   "ignoreScripts": [
     "sharp",
@@ -34,5 +44,8 @@
   "trustedDependencies": [
     "sharp",
     "unrs-resolver"
-  ]
+  ],
+  "prisma": {
+    "seed": "node prisma/seed.mjs"
+  }
 }

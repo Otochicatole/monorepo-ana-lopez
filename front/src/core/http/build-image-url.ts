@@ -8,9 +8,13 @@ export function buildImageUrl(imagePath: string | null | undefined): string {
     return imagePath;
   }
 
-  if (imagePath.startsWith("/")) {
+  if (imagePath.startsWith("/images/") || imagePath.startsWith("/svgs/")) {
+    return imagePath;
+  }
+
+  if (imagePath.startsWith("/uploads/")) {
     return `${STRAPI_URL}${imagePath}`;
   }
 
-  return `${STRAPI_URL}/${imagePath}`;
+  return `/${imagePath}`;
 }
