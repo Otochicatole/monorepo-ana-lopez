@@ -1,4 +1,3 @@
-import { randomUUID } from "crypto";
 import { requireAdmin } from "@/features/admin/infrastructure/admin-auth";
 import { prisma } from "@/shared/infrastructure/prisma";
 import { GalleryItemsClient } from "./gallery-items-client";
@@ -53,7 +52,6 @@ export default async function AdminGalleryPage() {
       items={itemRows}
       mediaItems={mediaItems}
       types={typeOptions}
-      suggestedDocumentId={`gallery-${randomUUID().slice(0, 8)}`}
     />
   );
 }

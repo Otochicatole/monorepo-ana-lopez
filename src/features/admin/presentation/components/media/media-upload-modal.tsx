@@ -17,9 +17,15 @@ type MediaUploadModalProps = {
   open: boolean;
   onClose: () => void;
   onUploaded?: (media: MediaPickerItem) => void;
+  refreshOnUpload?: boolean;
 };
 
-export function MediaUploadModal({ open, onClose, onUploaded }: MediaUploadModalProps) {
+export function MediaUploadModal({
+  open,
+  onClose,
+  onUploaded,
+  refreshOnUpload = true,
+}: MediaUploadModalProps) {
   const router = useRouter();
   const formId = useId();
   const wasPending = useRef(false);
@@ -31,11 +37,13 @@ export function MediaUploadModal({ open, onClose, onUploaded }: MediaUploadModal
   useEffect(() => {
     if (wasPending.current && !pending && state?.media) {
       onUploaded?.(state.media);
-      router.refresh();
+      if (refreshOnUpload) {
+        router.refresh();
+      }
       onClose();
     }
     wasPending.current = pending;
-  }, [pending, state, onUploaded, onClose, router]);
+  }, [pending, state, onUploaded, onClose, router, refreshOnUpload]);
 
   return (
     <AdminModal
