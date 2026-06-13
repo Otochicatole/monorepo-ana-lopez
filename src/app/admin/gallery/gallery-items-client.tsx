@@ -40,7 +40,6 @@ type GalleryItemsClientProps = {
   items: GalleryItemRow[];
   mediaItems: MediaPickerItem[];
   types: GalleryTypeOption[];
-  suggestedDocumentId: string;
 };
 
 /* ── Individual row with collapsible edit form ── */
@@ -117,7 +116,7 @@ function GalleryItemRow({
 
       {/* Expanded edit form */}
       {expanded && (
-        <div className="min-w-0 overflow-hidden bg-white/[0.02] px-5 py-4">
+        <div className="min-w-0 bg-white/[0.02] px-5 py-4">
           <form action={createGalleryItemAction} className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <input type="hidden" name="documentId" value={item.documentId} />
             <Field label="Internal name">
@@ -160,7 +159,6 @@ export function GalleryItemsClient({
   items,
   mediaItems,
   types,
-  suggestedDocumentId,
 }: GalleryItemsClientProps) {
   const [createOpen, setCreateOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -211,11 +209,11 @@ export function GalleryItemsClient({
       />
 
       <CreateGalleryItemModal
+        key={createOpen ? "open" : "closed"}
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         mediaItems={mediaItems}
         types={types}
-        suggestedDocumentId={suggestedDocumentId}
       />
 
       {/* Toolbar */}

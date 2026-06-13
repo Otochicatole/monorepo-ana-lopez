@@ -383,8 +383,12 @@ export async function deleteGalleryTypeAction(formData: FormData) {
   revalidatePath("/admin/gallery-types");
 }
 
-export async function createGalleryItemAction(formData: FormData) {
-  const admin = await requireAdmin();
+export type CreateGalleryItemState = {
+  error?: string;
+  success?: boolean;
+};
+
+async function upsertGalleryItemFromForm(formData: FormData, adminId: string) {
   const raw = Object.fromEntries(formData);
   const data = z
     .object({
@@ -418,7 +422,7 @@ export async function createGalleryItemAction(formData: FormData) {
   });
 
   await recordAudit({
-    actorId: admin.id,
+    actorId: adminId,
     action: "upsert",
     resource: "gallery",
     resourceId: record.id,
@@ -427,6 +431,28 @@ export async function createGalleryItemAction(formData: FormData) {
 
   revalidatePath("/gallery");
   revalidatePath("/admin/gallery");
+
+  return record;
+}
+
+export async function createGalleryItemAction(formData: FormData) {
+  const admin = await requireAdmin();
+  await upsertGalleryItemFromForm(formData, admin.id);
+}
+
+export async function createGalleryItemModalAction(
+  _prevState: CreateGalleryItemState | null,
+  formData: FormData
+): Promise<CreateGalleryItemState> {
+  try {
+    const admin = await requireAdmin();
+    await upsertGalleryItemFromForm(formData, admin.id);
+    return { success: true };
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Could not create gallery item",
+    };
+  }
 }
 
 export async function deleteGalleryItemAction(formData: FormData) {

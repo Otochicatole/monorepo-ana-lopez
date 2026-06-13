@@ -25,6 +25,7 @@ type MediaPickerFieldProps = {
   required?: boolean;
   label?: string;
   changeButtonLabel?: string;
+  refreshOnUpload?: boolean;
 };
 
 export function MediaPickerField({
@@ -34,6 +35,7 @@ export function MediaPickerField({
   required,
   label = "Media",
   changeButtonLabel = "Change image",
+  refreshOnUpload = true,
 }: MediaPickerFieldProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -178,6 +180,7 @@ export function MediaPickerField({
         open={uploadOpen}
         onClose={() => setUploadOpen(false)}
         onUploaded={handleUploaded}
+        refreshOnUpload={refreshOnUpload}
       />
     </FormField>
   );

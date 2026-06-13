@@ -62,7 +62,7 @@ export default async function AdminLocalesPage({
           }
         />
         <CardBody>
-          <form action={upsertLocaleAction} className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
+          <form action={upsertLocaleAction} className="flex max-w-md flex-col gap-4">
             {editing && <input type="hidden" name="id" value={editing.id} />}
 
             <FormField label="Language code" hint={editing ? "Cannot change after creation" : 'e.g. "es-AR"'}>
@@ -72,7 +72,7 @@ export default async function AdminLocalesPage({
                   <Input
                     defaultValue={editing.code}
                     readOnly
-                    className="w-32 cursor-not-allowed font-mono opacity-60"
+                    className="cursor-not-allowed font-mono opacity-60"
                   />
                 </>
               ) : (
@@ -82,7 +82,7 @@ export default async function AdminLocalesPage({
                   placeholder="es-AR"
                   autoComplete="off"
                   spellCheck={false}
-                  className="w-32 font-mono"
+                  className="font-mono"
                 />
               )}
             </FormField>
@@ -93,11 +93,10 @@ export default async function AdminLocalesPage({
                 required
                 defaultValue={editing?.name}
                 placeholder="Español (Argentina)"
-                className="sm:w-64"
               />
             </FormField>
 
-            <div className="flex flex-wrap gap-4 sm:items-end">
+            <div className="flex flex-col gap-3">
               <label className="flex cursor-pointer items-center gap-2 text-sm text-white/70">
                 <input
                   type="checkbox"
@@ -116,10 +115,11 @@ export default async function AdminLocalesPage({
                 />
                 Default
               </label>
-              <SubmitButton>
-                {editing ? "Update" : "Create locale"}
-              </SubmitButton>
             </div>
+
+            <SubmitButton className="self-start">
+              {editing ? "Update" : "Create locale"}
+            </SubmitButton>
           </form>
         </CardBody>
       </Card>

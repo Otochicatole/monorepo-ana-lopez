@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Check, ChevronDown } from "lucide-react";
 import { cn } from "@/features/admin/presentation/lib/cn";
 
@@ -35,6 +36,11 @@ function flatOptions<V extends string | number>(
   return opts as SelectOption<V>[];
 }
 
+function toSelectValue<V extends string | number>(value: V | null | undefined): V | "" {
+  if (value === null || value === undefined || value === "") return "";
+  return value;
+}
+
 // ─── Sizes ───────────────────────────────────────────────────────────────────
 
 const SIZE = {
@@ -60,6 +66,13 @@ const SIZE = {
     groupLabel: "px-4 pt-4 pb-1",
   },
 } as const;
+
+type DropdownPosition = {
+  top: number;
+  left: number;
+  width: number;
+  maxHeight: number;
+};
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -90,14 +103,46 @@ export function CustomSelect<V extends string | number = string>({
   const listId = useId();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
+  const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
-  const [dropUp, setDropUp] = useState(false);
+  const [dropdownPos, setDropdownPos] = useState<DropdownPosition | null>(null);
+  const [formValue, setFormValue] = useState<V | "">(() => toSelectValue(value));
   const s = SIZE[size];
 
-  const flat = flatOptions(options);
-  const selected = flat.find((o) => o.value === value) ?? null;
+  const isControlled = onChange !== undefined;
+  const resolvedValue = isControlled ? toSelectValue(value) : formValue;
 
-  // Close on outside click / Escape
+  const flat = flatOptions(options);
+  const selected = flat.find((o) => o.value === resolvedValue) ?? null;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isControlled) {
+      setFormValue(toSelectValue(value));
+    }
+  }, [value, isControlled]);
+
+  function updateDropdownPosition() {
+    if (!triggerRef.current) return;
+
+    const rect = triggerRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const maxHeight = 256;
+    const openUp = spaceBelow < maxHeight && spaceAbove > spaceBelow;
+
+    setDropdownPos({
+      left: rect.left,
+      width: rect.width,
+      maxHeight: Math.min(maxHeight, openUp ? spaceAbove - 12 : spaceBelow - 12),
+      top: openUp ? Math.max(8, rect.top - Math.min(maxHeight, spaceAbove - 12) - 6) : rect.bottom + 6,
+    });
+  }
+
+  // Close on outside click / Escape; reposition on scroll/resize
   useEffect(() => {
     if (!open) return;
 
@@ -118,28 +163,42 @@ export function CustomSelect<V extends string | number = string>({
       }
     }
 
+    function onReposition() {
+      updateDropdownPosition();
+    }
+
     document.addEventListener("pointerdown", onPointerDown);
     document.addEventListener("keydown", onKeyDown);
+    window.addEventListener("resize", onReposition);
+    window.addEventListener("scroll", onReposition, true);
+
     return () => {
       document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("resize", onReposition);
+      window.removeEventListener("scroll", onReposition, true);
     };
   }, [open]);
 
-  // Decide if dropdown opens up or down
   function toggleOpen() {
     if (disabled) return;
-    if (!open && triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      const spaceBelow = window.innerHeight - rect.bottom;
-      setDropUp(spaceBelow < 280);
+    if (!open) {
+      updateDropdownPosition();
+      setOpen(true);
+      return;
     }
-    setOpen((prev) => !prev);
+    setOpen(false);
   }
 
   function select(option: SelectOption<V>) {
     if (option.disabled) return;
-    onChange?.(option.value);
+
+    if (isControlled) {
+      onChange(option.value);
+    } else {
+      setFormValue(option.value);
+    }
+
     setOpen(false);
     triggerRef.current?.focus();
   }
@@ -174,7 +233,7 @@ export function CustomSelect<V extends string | number = string>({
         key={String(option.value)}
         id={`${listId}-${String(option.value)}`}
         role="option"
-        aria-selected={option.value === value}
+        aria-selected={option.value === resolvedValue}
         aria-disabled={option.disabled}
         tabIndex={option.disabled ? -1 : 0}
         onClick={() => select(option)}
@@ -187,7 +246,7 @@ export function CustomSelect<V extends string | number = string>({
         className={cn(
           "flex cursor-pointer items-center gap-3 rounded-lg transition-colors outline-none",
           s.option,
-          option.value === value
+          option.value === resolvedValue
             ? "bg-pk/15 text-pk"
             : "text-white/80 hover:bg-white/5 hover:text-white focus:bg-white/5 focus:text-white",
           option.disabled && "pointer-events-none opacity-40"
@@ -201,12 +260,49 @@ export function CustomSelect<V extends string | number = string>({
             </span>
           )}
         </span>
-        {option.value === value && (
+        {option.value === resolvedValue && (
           <Check className={cn("shrink-0 text-pk", s.icon)} aria-hidden />
         )}
       </li>
     ));
   }
+
+  const dropdown = open && dropdownPos ? (
+    <ul
+      ref={listRef}
+      id={listId}
+      role="listbox"
+      onKeyDown={onListKeyDown}
+      style={{
+        position: "fixed",
+        top: dropdownPos.top,
+        left: dropdownPos.left,
+        width: dropdownPos.width,
+        maxHeight: dropdownPos.maxHeight,
+        zIndex: 9999,
+      }}
+      className={cn(
+        "overflow-y-auto rounded-xl border border-white/10 bg-neutral-900 p-1.5 shadow-xl shadow-black/40",
+        s.dropdown
+      )}
+    >
+      {isGrouped(options)
+        ? (options as SelectGroup<V>[]).map((group) => (
+            <li key={group.label} role="presentation">
+              <p
+                className={cn(
+                  "font-semibold uppercase tracking-widest text-white/30",
+                  s.groupLabel
+                )}
+              >
+                {group.label}
+              </p>
+              <ul role="group">{renderOptions(group.options)}</ul>
+            </li>
+          ))
+        : renderOptions(flat)}
+    </ul>
+  ) : null;
 
   return (
     <div className={cn("relative", className)}>
@@ -214,7 +310,7 @@ export function CustomSelect<V extends string | number = string>({
       {name && (
         <select
           name={name}
-          value={value ?? ""}
+          value={String(resolvedValue)}
           required={required}
           onChange={() => {}}
           aria-hidden
@@ -223,7 +319,7 @@ export function CustomSelect<V extends string | number = string>({
         >
           <option value="" />
           {flat.map((o) => (
-            <option key={String(o.value)} value={o.value}>
+            <option key={String(o.value)} value={String(o.value)}>
               {o.label}
             </option>
           ))}
@@ -239,7 +335,7 @@ export function CustomSelect<V extends string | number = string>({
         aria-haspopup="listbox"
         aria-controls={listId}
         aria-activedescendant={
-          value != null ? `${listId}-${String(value)}` : undefined
+          resolvedValue !== "" ? `${listId}-${String(resolvedValue)}` : undefined
         }
         disabled={disabled}
         onClick={toggleOpen}
@@ -271,36 +367,7 @@ export function CustomSelect<V extends string | number = string>({
         />
       </button>
 
-      {/* Dropdown */}
-      {open && (
-        <ul
-          ref={listRef}
-          id={listId}
-          role="listbox"
-          onKeyDown={onListKeyDown}
-          className={cn(
-            "absolute z-50 max-h-64 w-full min-w-[180px] overflow-y-auto rounded-xl border border-white/10 bg-neutral-900 p-1.5 shadow-xl shadow-black/40",
-            s.dropdown,
-            dropUp ? "bottom-[calc(100%+6px)]" : "top-[calc(100%+6px)]"
-          )}
-        >
-          {isGrouped(options)
-            ? (options as SelectGroup<V>[]).map((group) => (
-                <li key={group.label} role="presentation">
-                  <p
-                    className={cn(
-                      "font-semibold uppercase tracking-widest text-white/30",
-                      s.groupLabel
-                    )}
-                  >
-                    {group.label}
-                  </p>
-                  <ul role="group">{renderOptions(group.options)}</ul>
-                </li>
-              ))
-            : renderOptions(flat)}
-        </ul>
-      )}
+      {mounted && dropdown ? createPortal(dropdown, document.body) : null}
     </div>
   );
 }
