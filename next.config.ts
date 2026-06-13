@@ -7,24 +7,20 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: 'http',
-        hostname: 'localhost',
-        port: '1337',
-        pathname: '/uploads/**',
+        protocol: "http",
+        hostname: "localhost",
+        port: "1337",
+        pathname: "/uploads/**",
       },
       {
-        protocol: 'http',
-        hostname: '**',
-        pathname: '/uploads/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'res.cloudinary.com',
-        pathname: '/**',
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+        pathname: "/**",
       },
     ],
-    dangerouslyAllowSVG: true,
-    contentDispositionType: 'attachment',
+    // SVG disabled: serving SVG through Next/Image can enable stored XSS
+    dangerouslyAllowSVG: false,
+    contentDispositionType: "attachment",
     unoptimized: true,
   },
 };

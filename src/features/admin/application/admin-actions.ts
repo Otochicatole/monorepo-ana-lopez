@@ -11,6 +11,8 @@ import { uploadImageToCloudinary, isCloudinaryConfigured } from "@/shared/infras
 import { loginAdmin, logoutAdmin, requireAdmin } from "../infrastructure/admin-auth";
 import { LocaleIdSchema } from "@/features/content/presentation/public-content-schemas";
 
+const ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp", "image/gif"] as const;
+
 const optionalInt = z.preprocess((value) => {
   if (value === "" || value === null || typeof value === "undefined") return null;
   return Number(value);
@@ -46,15 +48,18 @@ async function recordAudit(input: {
   revalidatePath("/admin/audit-logs");
 }
 
+// ─── Auth actions ─────────────────────────────────────────────────────────────
+
 export async function loginAction(formData: FormData) {
-  const data = z
+  const parsed = z
     .object({
       identifier: z.string().min(1),
       password: z.string().min(1),
     })
-    .parse(Object.fromEntries(formData));
+    .safeParse(Object.fromEntries(formData));
 
-  const ok = await loginAdmin(data.identifier, data.password);
+  if (!parsed.success) redirect("/admin/login?error=1");
+  const ok = await loginAdmin(parsed.data.identifier, parsed.data.password);
   if (!ok) redirect("/admin/login?error=1");
   redirect("/admin");
 }
@@ -64,28 +69,25 @@ export async function logoutAction() {
   redirect("/admin/login");
 }
 
+// ─── Content actions ──────────────────────────────────────────────────────────
+
 export async function upsertHomeAction(formData: FormData) {
   const admin = await requireAdmin();
-  const data = z
+  const parsed = z
     .object({
       localeId: LocaleIdSchema,
       about: z.string().min(1),
       imageAboutId: z.coerce.number().int().positive(),
     })
-    .parse(Object.fromEntries(formData));
+    .safeParse(Object.fromEntries(formData));
+
+  if (!parsed.success) redirect("/admin/home?error=invalid");
+  const data = parsed.data;
 
   const record = await prisma.homeContent.upsert({
     where: { localeId: data.localeId },
-    update: {
-      about: data.about,
-      imageAboutId: data.imageAboutId,
-      deletedAt: null,
-    },
-    create: {
-      localeId: data.localeId,
-      about: data.about,
-      imageAboutId: data.imageAboutId,
-    },
+    update: { about: data.about, imageAboutId: data.imageAboutId, deletedAt: null },
+    create: { localeId: data.localeId, about: data.about, imageAboutId: data.imageAboutId },
   });
 
   await recordAudit({
@@ -102,7 +104,7 @@ export async function upsertHomeAction(formData: FormData) {
 
 export async function upsertAboutAction(formData: FormData) {
   const admin = await requireAdmin();
-  const data = z
+  const parsed = z
     .object({
       localeId: LocaleIdSchema,
       text1: z.string().optional(),
@@ -112,7 +114,10 @@ export async function upsertAboutAction(formData: FormData) {
       text3: z.string().optional(),
       image3Id: optionalInt,
     })
-    .parse(Object.fromEntries(formData));
+    .safeParse(Object.fromEntries(formData));
+
+  if (!parsed.success) redirect("/admin/about?error=invalid");
+  const data = parsed.data;
 
   const record = await prisma.aboutContent.upsert({
     where: { localeId: data.localeId },
@@ -148,21 +153,36 @@ export async function upsertAboutAction(formData: FormData) {
   revalidatePath("/admin/about");
 }
 
+// ─── Media actions ────────────────────────────────────────────────────────────
+
 export async function createMediaAction(formData: FormData) {
   const admin = await requireAdmin();
-  const data = z
+  const parsed = z
     .object({
       documentId: z.string().min(1),
       name: z.string().min(1),
       alternativeText: z.string().optional(),
-      url: z.string().min(1),
-      mime: z.string().min(1),
+      url: z
+        .string()
+        .min(1)
+        .refine(
+          (u) => u.startsWith("/") || u.startsWith("https://res.cloudinary.com/"),
+          { message: "URL must be a relative path or a Cloudinary URL" }
+        ),
+      mime: z
+        .string()
+        .refine((m) => (ALLOWED_MIME as readonly string[]).includes(m), {
+          message: "Unsupported MIME type",
+        }),
       ext: z.string().optional(),
       width: optionalInt,
       height: optionalInt,
       size: z.coerce.number().positive().default(1),
     })
-    .parse(Object.fromEntries(formData));
+    .safeParse(Object.fromEntries(formData));
+
+  if (!parsed.success) redirect("/admin/media?error=invalid");
+  const data = parsed.data;
 
   const record = await prisma.mediaFile.upsert({
     where: { documentId: data.documentId },
@@ -234,8 +254,8 @@ export async function uploadMediaFileAction(
       return { error: "File is required" };
     }
 
-    if (!file.type.startsWith("image/")) {
-      return { error: "Only image uploads are supported" };
+    if (!(ALLOWED_MIME as readonly string[]).includes(file.type)) {
+      return { error: "Only JPEG, PNG, WEBP or GIF images are allowed" };
     }
 
     const maxSize = 5 * 1024 * 1024;
@@ -246,7 +266,7 @@ export async function uploadMediaFileAction(
     if (!isCloudinaryConfigured()) {
       return {
         error:
-          "Image uploads require Cloudinary. Add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET to your environment variables (e.g. in Vercel → Settings → Environment Variables), then redeploy.",
+          "Image uploads require Cloudinary. Add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET to your environment variables.",
       };
     }
 
@@ -308,34 +328,35 @@ export async function uploadMediaFileAction(
       },
     };
   } catch (error) {
-    return {
-      error: error instanceof Error ? error.message : "Upload failed",
-    };
+    console.error("[uploadMediaFileAction]", error);
+    return { error: "Upload failed. Please try again." };
   }
 }
 
 export async function deleteMediaAction(formData: FormData) {
   const admin = await requireAdmin();
-  const id = z.coerce.number().int().positive().parse(formData.get("id"));
+  const parsed = z.coerce.number().int().positive().safeParse(formData.get("id"));
+  if (!parsed.success) redirect("/admin/media?error=invalid");
+  const id = parsed.data;
   await prisma.mediaFile.update({ where: { id }, data: { deletedAt: new Date() } });
-  await recordAudit({
-    actorId: admin.id,
-    action: "delete",
-    resource: "media",
-    resourceId: id,
-  });
+  await recordAudit({ actorId: admin.id, action: "delete", resource: "media", resourceId: id });
   revalidatePath("/admin/media");
 }
 
+// ─── Gallery type actions ─────────────────────────────────────────────────────
+
 export async function createGalleryTypeAction(formData: FormData) {
   const admin = await requireAdmin();
-  const data = z
+  const parsed = z
     .object({
       documentId: z.string().min(1),
       localeId: LocaleIdSchema,
       name: z.string().min(1),
     })
-    .parse(Object.fromEntries(formData));
+    .safeParse(Object.fromEntries(formData));
+
+  if (!parsed.success) redirect("/admin/gallery-types?error=invalid");
+  const data = parsed.data;
 
   const record = await prisma.galleryType.upsert({
     where: { documentId: data.documentId },
@@ -344,18 +365,9 @@ export async function createGalleryTypeAction(formData: FormData) {
   });
 
   await prisma.galleryTypeTranslation.upsert({
-    where: {
-      galleryTypeId_localeId: {
-        galleryTypeId: record.id,
-        localeId: data.localeId,
-      },
-    },
+    where: { galleryTypeId_localeId: { galleryTypeId: record.id, localeId: data.localeId } },
     update: { name: data.name },
-    create: {
-      galleryTypeId: record.id,
-      localeId: data.localeId,
-      name: data.name,
-    },
+    create: { galleryTypeId: record.id, localeId: data.localeId, name: data.name },
   });
 
   await recordAudit({
@@ -372,16 +384,15 @@ export async function createGalleryTypeAction(formData: FormData) {
 
 export async function deleteGalleryTypeAction(formData: FormData) {
   const admin = await requireAdmin();
-  const id = z.coerce.number().int().positive().parse(formData.get("id"));
+  const parsed = z.coerce.number().int().positive().safeParse(formData.get("id"));
+  if (!parsed.success) redirect("/admin/gallery-types?error=invalid");
+  const id = parsed.data;
   await prisma.galleryType.update({ where: { id }, data: { deletedAt: new Date() } });
-  await recordAudit({
-    actorId: admin.id,
-    action: "delete",
-    resource: "gallery-type",
-    resourceId: id,
-  });
+  await recordAudit({ actorId: admin.id, action: "delete", resource: "gallery-type", resourceId: id });
   revalidatePath("/admin/gallery-types");
 }
+
+// ─── Gallery item actions ─────────────────────────────────────────────────────
 
 export type CreateGalleryItemState = {
   error?: string;
@@ -389,19 +400,20 @@ export type CreateGalleryItemState = {
 };
 
 async function upsertGalleryItemFromForm(formData: FormData, adminId: string) {
-  const raw = Object.fromEntries(formData);
-  const data = z
+  const parsed = z
     .object({
       documentId: z.preprocess(
-        (value) =>
-          typeof value === "string" && value.trim() === "" ? undefined : value,
+        (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
         z.string().min(1).optional()
       ),
       name: z.string().optional(),
       mediaId: z.coerce.number().int().positive(),
       galleryTypeId: optionalInt,
     })
-    .parse(raw);
+    .safeParse(Object.fromEntries(formData));
+
+  if (!parsed.success) throw new Error("Invalid gallery item data");
+  const data = parsed.data;
 
   const documentId = data.documentId ?? `gallery-${randomUUID()}`;
 
@@ -449,21 +461,17 @@ export async function createGalleryItemModalAction(
     await upsertGalleryItemFromForm(formData, admin.id);
     return { success: true };
   } catch (error) {
-    return {
-      error: error instanceof Error ? error.message : "Could not create gallery item",
-    };
+    console.error("[createGalleryItemModalAction]", error);
+    return { error: "Could not create gallery item. Please try again." };
   }
 }
 
 export async function deleteGalleryItemAction(formData: FormData) {
   const admin = await requireAdmin();
-  const id = z.coerce.number().int().positive().parse(formData.get("id"));
+  const parsed = z.coerce.number().int().positive().safeParse(formData.get("id"));
+  if (!parsed.success) redirect("/admin/gallery?error=invalid");
+  const id = parsed.data;
   await prisma.galleryItem.update({ where: { id }, data: { deletedAt: new Date() } });
-  await recordAudit({
-    actorId: admin.id,
-    action: "delete",
-    resource: "gallery",
-    resourceId: id,
-  });
+  await recordAudit({ actorId: admin.id, action: "delete", resource: "gallery", resourceId: id });
   revalidatePath("/admin/gallery");
 }

@@ -7,84 +7,75 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum ContactEmailStatus {
-  PENDING
-  SENT
-  FAILED
-}
-
 model Locale {
-  id        String   @id @default(cuid())
-  code      String   @unique
-  name      String
-  isDefault Boolean  @default(false)
-  isActive  Boolean  @default(true)
-  sortOrder Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  homeContents            HomeContent[]
-  aboutContents           AboutContent[]
+  id                      String                   @id @default(cuid())
+  code                    String                   @unique
+  name                    String
+  isDefault               Boolean                  @default(false)
+  isActive                Boolean                  @default(true)
+  sortOrder               Int                      @default(0)
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  aboutContents           AboutContent?
   galleryTypeTranslations GalleryTypeTranslation[]
+  homeContents            HomeContent?
 
   @@index([isActive, sortOrder])
 }
 
 model HomeContent {
   id           Int       @id @default(autoincrement())
-  localeId     String
-  locale       Locale    @relation(fields: [localeId], references: [id])
+  localeId     String    @unique
   about        String
   imageAboutId Int
-  imageAbout   MediaFile @relation("HomeImageAbout", fields: [imageAboutId], references: [id])
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   deletedAt    DateTime?
+  imageAbout   MediaFile @relation("HomeImageAbout", fields: [imageAboutId], references: [id])
+  locale       Locale    @relation(fields: [localeId], references: [id])
 
-  @@unique([localeId])
   @@index([localeId])
 }
 
 model AboutContent {
   id        Int        @id @default(autoincrement())
-  localeId  String
-  locale    Locale     @relation(fields: [localeId], references: [id])
+  localeId  String     @unique
   text1     String?
   image1Id  Int?
-  image1    MediaFile? @relation("AboutImage1", fields: [image1Id], references: [id])
   text2     String?
   image2Id  Int?
-  image2    MediaFile? @relation("AboutImage2", fields: [image2Id], references: [id])
   text3     String?
   image3Id  Int?
-  image3    MediaFile? @relation("AboutImage3", fields: [image3Id], references: [id])
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
   deletedAt DateTime?
+  image1    MediaFile? @relation("AboutImage1", fields: [image1Id], references: [id])
+  image2    MediaFile? @relation("AboutImage2", fields: [image2Id], references: [id])
+  image3    MediaFile? @relation("AboutImage3", fields: [image3Id], references: [id])
+  locale    Locale     @relation(fields: [localeId], references: [id])
 
-  @@unique([localeId])
   @@index([localeId])
 }
 
 model GalleryType {
   id           Int                      @id @default(autoincrement())
   documentId   String                   @unique @default(cuid())
-  galleries    GalleryItem[]
-  translations GalleryTypeTranslation[]
   createdAt    DateTime                 @default(now())
   updatedAt    DateTime                 @updatedAt
   deletedAt    DateTime?
+  galleries    GalleryItem[]
+  translations GalleryTypeTranslation[]
 }
 
 model GalleryTypeTranslation {
   id            Int         @id @default(autoincrement())
   galleryTypeId Int
-  galleryType   GalleryType @relation(fields: [galleryTypeId], references: [id], onDelete: Cascade)
   localeId      String
-  locale        Locale      @relation(fields: [localeId], references: [id])
   name          String
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
+  galleryType   GalleryType @relation(fields: [galleryTypeId], references: [id], onDelete: Cascade)
+  locale        Locale      @relation(fields: [localeId], references: [id])
 
   @@unique([galleryTypeId, localeId])
   @@index([localeId])
@@ -95,20 +86,20 @@ model GalleryItem {
   documentId    String       @unique @default(cuid())
   name          String?
   mediaId       Int
-  media         MediaFile    @relation("GalleryMedia", fields: [mediaId], references: [id])
   galleryTypeId Int?
-  galleryType   GalleryType? @relation(fields: [galleryTypeId], references: [id])
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
   deletedAt     DateTime?
+  galleryType   GalleryType? @relation(fields: [galleryTypeId], references: [id])
+  media         MediaFile    @relation("GalleryMedia", fields: [mediaId], references: [id])
 
   @@index([createdAt])
   @@index([galleryTypeId])
 }
 
 model MediaFile {
-  id               Int       @id @default(autoincrement())
-  documentId       String    @unique @default(cuid())
+  id               Int            @id @default(autoincrement())
+  documentId       String         @unique @default(cuid())
   name             String
   alternativeText  String?
   caption          String?
@@ -121,18 +112,17 @@ model MediaFile {
   size             Decimal
   url              String
   previewUrl       String?
-  provider         String    @default("local")
+  provider         String         @default("local")
   providerMetadata Json?
   focalPoint       Json?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
   deletedAt        DateTime?
-
-  homeImageAbout HomeContent[] @relation("HomeImageAbout")
-  galleryMedia   GalleryItem[] @relation("GalleryMedia")
-  aboutImage1    AboutContent[] @relation("AboutImage1")
-  aboutImage2    AboutContent[] @relation("AboutImage2")
-  aboutImage3    AboutContent[] @relation("AboutImage3")
+  aboutImage1      AboutContent[] @relation("AboutImage1")
+  aboutImage2      AboutContent[] @relation("AboutImage2")
+  aboutImage3      AboutContent[] @relation("AboutImage3")
+  galleryMedia     GalleryItem[]  @relation("GalleryMedia")
+  homeImageAbout   HomeContent[]  @relation("HomeImageAbout")
 
   @@index([mime])
 }
@@ -156,11 +146,11 @@ model AdminUser {
   passwordHash String
   blocked      Boolean   @default(false)
   roleId       String
-  role         Role      @relation(fields: [roleId], references: [id])
-  sessions     Session[]
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   deletedAt    DateTime?
+  role         Role      @relation(fields: [roleId], references: [id])
+  sessions     Session[]
 }
 
 model Role {
@@ -168,10 +158,10 @@ model Role {
   name        String           @unique
   code        String           @unique
   description String?
-  users       AdminUser[]
-  permissions RolePermission[]
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
+  users       AdminUser[]
+  permissions RolePermission[]
 }
 
 model Permission {
@@ -186,8 +176,8 @@ model Permission {
 model RolePermission {
   roleId       String
   permissionId String
-  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
   permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@id([roleId, permissionId])
 }
@@ -195,7 +185,6 @@ model RolePermission {
 model Session {
   id               String    @id @default(cuid())
   userId           String
-  user             AdminUser @relation(fields: [userId], references: [id], onDelete: Cascade)
   refreshTokenHash String    @unique
   csrfTokenHash    String
   userAgent        String?
@@ -204,6 +193,7 @@ model Session {
   revokedAt        DateTime?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
+  user             AdminUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([expiresAt])
@@ -222,4 +212,10 @@ model AuditLog {
 
   @@index([actorId])
   @@index([resource, resourceId])
+}
+
+enum ContactEmailStatus {
+  PENDING
+  SENT
+  FAILED
 }

@@ -396,23 +396,47 @@ async function seedSecurity() {
     }
   }
 
-  const adminPassword = process.env.ADMIN_SEED_PASSWORD || "admin123456";
-  await prisma.adminUser.upsert({
-    where: { email: process.env.ADMIN_SEED_EMAIL || "admin@example.com" },
-    update: {
-      username: process.env.ADMIN_SEED_USERNAME || "admin",
-      passwordHash: hashPassword(adminPassword),
-      roleId: adminRole.id,
-      blocked: false,
-      deletedAt: null,
-    },
-    create: {
-      email: process.env.ADMIN_SEED_EMAIL || "admin@example.com",
-      username: process.env.ADMIN_SEED_USERNAME || "admin",
-      passwordHash: hashPassword(adminPassword),
-      roleId: adminRole.id,
-    },
+  const adminEmail = process.env.ADMIN_SEED_EMAIL;
+  const adminUsername = process.env.ADMIN_SEED_USERNAME;
+  const adminPassword = process.env.ADMIN_SEED_PASSWORD;
+
+  const isProduction = process.env.NODE_ENV === "production";
+
+  if (isProduction && (!adminEmail || !adminUsername || !adminPassword)) {
+    throw new Error(
+      "ADMIN_SEED_EMAIL, ADMIN_SEED_USERNAME and ADMIN_SEED_PASSWORD must be set in production. " +
+        "Refusing to seed with insecure defaults."
+    );
+  }
+
+  const resolvedEmail = adminEmail ?? "admin@example.com";
+  const resolvedUsername = adminUsername ?? "admin";
+  const resolvedPassword = adminPassword ?? "admin123456";
+
+  const existingAdmin = await prisma.adminUser.findUnique({
+    where: { email: resolvedEmail },
   });
+
+  if (!existingAdmin) {
+    await prisma.adminUser.create({
+      data: {
+        email: resolvedEmail,
+        username: resolvedUsername,
+        passwordHash: hashPassword(resolvedPassword),
+        roleId: adminRole.id,
+      },
+    });
+  } else {
+    // Never reset the password on re-seed; only update non-auth fields
+    await prisma.adminUser.update({
+      where: { email: resolvedEmail },
+      data: {
+        roleId: adminRole.id,
+        blocked: false,
+        deletedAt: null,
+      },
+    });
+  }
 }
 
 async function main() {
