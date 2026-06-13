@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/shared/infrastructure/prisma";
-import { uploadImageToCloudinary } from "@/shared/infrastructure/cloudinary";
+import { uploadImageToCloudinary, isCloudinaryConfigured } from "@/shared/infrastructure/cloudinary";
 import { loginAdmin, logoutAdmin, requireAdmin } from "../infrastructure/admin-auth";
 import { LocaleIdSchema } from "@/features/content/presentation/public-content-schemas";
 
@@ -241,6 +241,13 @@ export async function uploadMediaFileAction(
     const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
       return { error: "File must be 5MB or smaller" };
+    }
+
+    if (!isCloudinaryConfigured()) {
+      return {
+        error:
+          "Image uploads require Cloudinary. Add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET to your environment variables (e.g. in Vercel → Settings → Environment Variables), then redeploy.",
+      };
     }
 
     const id = randomUUID();
