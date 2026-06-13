@@ -20,6 +20,7 @@ import { Field } from "../_components/form-fields";
 import { Input } from "@/features/admin/presentation/components/ui/form-controls";
 import { CustomSelect } from "@/shared/components/common/custom-select";
 import { cn } from "@/features/admin/presentation/lib/cn";
+import { buildImageUrl, isRenderableMediaUrl } from "@/core/http/build-image-url";
 import { CreateGalleryItemModal } from "./create-gallery-item-modal";
 
 export type GalleryTypeOption = { id: number; documentId: string };
@@ -60,9 +61,9 @@ function GalleryItemRow({
       <div className="flex min-w-0 items-center gap-4 px-5 py-3">
         {/* Thumbnail */}
         <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-black/40">
-          {item.media.url.startsWith("/") ? (
+          {isRenderableMediaUrl(item.media.url) ? (
             <Image
-              src={item.media.url}
+              src={buildImageUrl(item.media.url)}
               alt={item.media.alternativeText || item.media.name}
               fill
               sizes="48px"

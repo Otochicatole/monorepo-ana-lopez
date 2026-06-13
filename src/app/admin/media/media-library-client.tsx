@@ -14,6 +14,7 @@ import { SubmitButton } from "@/features/admin/presentation/components/ui/submit
 import { ConfirmDeleteButton } from "@/features/admin/presentation/components/ui/confirm-delete-button";
 import { Input } from "@/features/admin/presentation/components/ui/form-controls";
 import { MediaUploadButton } from "@/features/admin/presentation/components/media/media-upload-modal";
+import { buildImageUrl, isRenderableMediaUrl } from "@/core/http/build-image-url";
 import { cn } from "@/features/admin/presentation/lib/cn";
 
 type MediaItem = {
@@ -38,9 +39,9 @@ function MediaRow({ item }: { item: MediaItem }) {
       <div className="flex items-center gap-4 px-5 py-3">
         {/* Thumbnail */}
         <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-black/40">
-          {item.url.startsWith("/") ? (
+          {isRenderableMediaUrl(item.url) ? (
             <Image
-              src={item.url}
+              src={buildImageUrl(item.url)}
               alt={item.alternativeText || item.name}
               fill
               sizes="48px"

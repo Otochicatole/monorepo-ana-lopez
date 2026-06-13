@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { MediaFile } from "@prisma/client";
 import { cn } from "@/features/admin/presentation/lib/cn";
+import { buildImageUrl, isRenderableMediaUrl } from "@/core/http/build-image-url";
 import { FormField } from "@/features/admin/presentation/components/ui/form-controls";
 
 export function MediaSelect({
@@ -45,9 +46,9 @@ export function MediaSelect({
             className="sr-only"
           />
           <span className="relative block aspect-square overflow-hidden rounded-md bg-white/5">
-            {item.url.startsWith("/") ? (
+            {isRenderableMediaUrl(item.url) ? (
               <Image
-                src={item.url}
+                src={buildImageUrl(item.url)}
                 alt={item.alternativeText || item.name}
                 fill
                 sizes="72px"

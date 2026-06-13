@@ -1,13 +1,13 @@
 "use server";
 
-import { mkdir, writeFile } from "fs/promises";
-import { extname, join } from "path";
+import { extname } from "path";
 import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/shared/infrastructure/prisma";
+import { uploadImageToCloudinary, isCloudinaryConfigured } from "@/shared/infrastructure/cloudinary";
 import { loginAdmin, logoutAdmin, requireAdmin } from "../infrastructure/admin-auth";
 import { LocaleIdSchema } from "@/features/content/presentation/public-content-schemas";
 
@@ -243,16 +243,22 @@ export async function uploadMediaFileAction(
       return { error: "File must be 5MB or smaller" };
     }
 
+    if (!isCloudinaryConfigured()) {
+      return {
+        error:
+          "Image uploads require Cloudinary. Add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET to your environment variables (e.g. in Vercel → Settings → Environment Variables), then redeploy.",
+      };
+    }
+
     const id = randomUUID();
     const originalName = safeFileName(file.name || "upload");
     const extension = extname(originalName);
-    const fileName = `${id}-${originalName}`;
-    const uploadDir = join(process.cwd(), "public", "uploads", "cms");
-    const uploadPath = join(uploadDir, fileName);
     const bytes = Buffer.from(await file.arrayBuffer());
 
-    await mkdir(uploadDir, { recursive: true });
-    await writeFile(uploadPath, bytes);
+    const upload = await uploadImageToCloudinary(bytes, {
+      publicId: id,
+      folder: "ana-lopez/cms",
+    });
 
     const record = await prisma.mediaFile.create({
       data: {
@@ -261,13 +267,19 @@ export async function uploadMediaFileAction(
         alternativeText:
           z.string().optional().parse(formData.get("alternativeText") || undefined) ||
           null,
-        url: `/uploads/cms/${fileName}`,
-        mime: file.type,
-        ext: extension || null,
-        size: Number((file.size / 1024).toFixed(2)),
+        url: upload.secureUrl,
+        mime: file.type || `image/${upload.format}`,
+        ext: extension || `.${upload.format}`,
+        width: upload.width,
+        height: upload.height,
+        size: Number((upload.bytes / 1024).toFixed(2)),
         formats: {},
-        provider: "local",
-        providerMetadata: {},
+        provider: "cloudinary",
+        providerMetadata: {
+          publicId: upload.publicId,
+          version: upload.version,
+          format: upload.format,
+        },
       },
     });
 
@@ -278,7 +290,7 @@ export async function uploadMediaFileAction(
       resourceId: record.id,
       metadata: {
         documentId: record.documentId,
-        fileName,
+        publicId: upload.publicId,
         mime: file.type,
         size: file.size,
       },

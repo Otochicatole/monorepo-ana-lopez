@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { ImageIcon, Plus } from "lucide-react";
 import { cn } from "@/features/admin/presentation/lib/cn";
+import { buildImageUrl, isRenderableMediaUrl } from "@/core/http/build-image-url";
 import { Button } from "@/features/admin/presentation/components/ui/button";
 import { FormField } from "@/features/admin/presentation/components/ui/form-controls";
 import { AdminModalWide } from "@/features/admin/presentation/components/ui/modal";
@@ -66,9 +67,9 @@ export function MediaPickerField({
 
       <div className="flex min-w-0 flex-col gap-4 overflow-hidden rounded-lg border border-white/10 bg-neutral-900/40 p-4 sm:flex-row sm:items-center">
         <div className="relative h-28 w-24 shrink-0 overflow-hidden rounded-lg bg-black/40">
-          {selected?.url.startsWith("/") ? (
+          {selected && isRenderableMediaUrl(selected.url) ? (
             <Image
-              src={selected.url}
+              src={buildImageUrl(selected.url)}
               alt={selected.alternativeText || selected.name}
               fill
               sizes="96px"
@@ -148,9 +149,9 @@ export function MediaPickerField({
                   )}
                 >
                   <span className="relative block aspect-square overflow-hidden rounded-md bg-white/5">
-                    {item.url.startsWith("/") ? (
+                    {isRenderableMediaUrl(item.url) ? (
                       <Image
-                        src={item.url}
+                        src={buildImageUrl(item.url)}
                         alt={item.alternativeText || item.name}
                         fill
                         sizes="80px"
